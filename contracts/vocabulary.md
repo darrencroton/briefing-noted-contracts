@@ -2,7 +2,7 @@
 
 **Authoritative source:** Master Plan §26. Every string in these lists is part of the contract. Readers must treat unknown values as errors; writers must use only the values listed here.
 
-Adding a value is a **minor** version bump (additive). Removing or renaming a value is a **major** version bump (breaking). See `versioning-policy.md`.
+Because readers reject unknown values by design, **any change to any list below — adding, removing, or renaming — is a major version bump.** See `versioning-policy.md`.
 
 ## Stop reasons (in `completion.json`)
 

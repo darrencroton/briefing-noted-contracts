@@ -693,9 +693,9 @@ sessions/
       status.json
       ui_state.json
     audio/
-      raw_room.wav        (in_person)
-      raw_mic.wav         (online / hybrid)
-      raw_system.wav      (online / hybrid)
+      raw_room.wav        (audio_strategy = room_mic)
+      raw_mic.wav         (audio_strategy = mic_plus_system)
+      raw_system.wav      (audio_strategy = mic_plus_system)
     transcript/
       transcript.json
       transcript.txt

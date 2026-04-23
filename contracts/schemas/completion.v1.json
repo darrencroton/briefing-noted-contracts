@@ -20,9 +20,9 @@
   "additionalProperties": true,
   "properties": {
     "schema_version": {
-      "description": "Major.minor version of this completion schema.",
+      "description": "Major.minor version of this completion payload. Readers pinned to major 1 accept any 1.x payload; forward-tolerate minor (unknown fields ignored). Enforced as a major-1 pattern rather than a const so a 1.0 reader does not reject a 1.1 payload at schema-validation time (see `contracts/versioning-policy.md`).",
       "type": "string",
-      "const": "1.0"
+      "pattern": "^1\\.[0-9]+$"
     },
     "session_id": { "type": "string", "minLength": 1 },
     "manifest_schema_version": {

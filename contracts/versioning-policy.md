@@ -17,6 +17,11 @@ Three kinds of version move together on each tag:
 - **Backward-strict minor.** A v1.1 reader does **not** accept a v1.0 payload that is missing a v1.1-required field; validation fails.
 - **Unknown major → fail.** `noted validate-manifest` returns exit 2.
 
+### How the schemas enforce this
+
+- `schema_version` in `schemas/manifest.v1.json` and `schemas/completion.v1.json` is a pattern matching `^1\.[0-9]+$` — **not** a const of `"1.0"`. Any 1.x payload therefore passes the major check; minor drift is handled by JSON Schema's default `additionalProperties: true`, which ignores unknown fields.
+- Enums (stop reasons, terminal statuses, mode types, audio strategies, ASR backends, runtime statuses, runtime phases) are closed in the schemas. Adding a value to any of them is breaking, and therefore a major bump. A reader cannot simultaneously be strict about unknown enum values and forward-tolerant about them; the contract chooses strictness, which is why enum additions are major.
+
 ## When to bump
 
 ### Patch (1.0.0 → 1.0.1)
@@ -34,13 +39,13 @@ Additive, backward-compatible changes **only**. Consumers on 1.0 must continue t
 Examples:
 
 - Adding a new optional field to a schema.
-- Adding a new value to a vocabulary list (stop reasons, runtime statuses, ASR backends, etc.).
 - Adding a new optional CLI command or optional flag that does not change existing exit codes.
 - Adding a new optional file to the session directory.
 
-Not examples (these are **major**):
+Not examples (these are **major**, see below):
 
 - Adding a new **required** field.
+- Adding a value to any locked vocabulary (stop reasons, terminal statuses, runtime statuses, runtime phases, mode types, audio strategies, ASR backends, transcript filenames). Enums in the schemas are closed, and readers reject unknown values by design (`contracts/vocabulary.md`). An added value is therefore breaking for any older reader that receives it.
 - Changing the meaning or type of an existing field.
 - Removing or renaming any field, enum value, CLI command, exit code, or filename.
 - Tightening a regex, enum, or range that previously accepted a value.
@@ -53,7 +58,7 @@ On a minor bump:
 
 ### Major (1.x → 2.0)
 
-Breaking changes.
+Breaking changes. This includes any of the "not examples" above — notably, any change to a locked vocabulary (added stop reasons, terminal statuses, runtime statuses, runtime phases, mode types, audio strategies, ASR backends, transcript filenames).
 
 Rules:
 

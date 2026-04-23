@@ -4,6 +4,8 @@
 
 ## Canonical layout
 
+The names of files under `audio/` are determined by the resolved `audio_strategy` (§14.1), not directly by `mode.type`. See the *Audio files by strategy* table below.
+
 ```
 sessions/
   <session_id>/
@@ -12,9 +14,9 @@ sessions/
       status.json
       ui_state.json
     audio/
-      raw_room.wav        (in_person)
-      raw_mic.wav         (online / hybrid)
-      raw_system.wav      (online / hybrid)
+      raw_room.wav        (audio_strategy = room_mic)
+      raw_mic.wav         (audio_strategy = mic_plus_system)
+      raw_system.wav      (audio_strategy = mic_plus_system)
     transcript/
       transcript.json
       transcript.txt
@@ -58,15 +60,26 @@ Locked filenames (§26.3):
 
 Speaker labels produced by the diarizer are opaque identifiers (`speaker_0`, `speaker_1`, …). Binding opaque IDs to real names is handled by `briefing` at summarisation time using the `host_name` and `participant_names` hints (§15.4, §16.3–§16.4).
 
-## Audio files by mode
+## Audio files by strategy
 
-| `mode.type`   | Files under `audio/`                         |
-|---------------|----------------------------------------------|
-| `in_person`   | `raw_room.wav`                               |
-| `online`      | `raw_mic.wav`, `raw_system.wav`              |
-| `hybrid`      | `raw_room.wav` (treated as `in_person` unless overridden) |
+Files under `audio/` are a function of the **resolved `audio_strategy`**, not of `mode.type`. The default mapping from `mode.type` to `audio_strategy` (per master-plan §14.1) is:
 
-Default capture format is WAV 16-bit / 48 kHz mono for `in_person`. Retention is governed by the policy in master-plan §27.10 (30-day rolling window, FLAC compressed).
+| `mode.type`   | Default `audio_strategy`        |
+|---------------|---------------------------------|
+| `in_person`   | `room_mic`                      |
+| `online`      | `mic_plus_system`               |
+| `hybrid`      | `room_mic` (treated as `in_person` unless explicitly overridden in the manifest) |
+
+And the strategy determines which files are written:
+
+| `audio_strategy`   | Files under `audio/`                    |
+|--------------------|-----------------------------------------|
+| `room_mic`         | `raw_room.wav`                          |
+| `mic_plus_system`  | `raw_mic.wav`, `raw_system.wav`         |
+
+Default capture format for `room_mic` is WAV 16-bit / 48 kHz mono.
+
+Raw-audio retention is **not** part of the Phase 1 contract. The project-wide policy is master-plan §27.10 (30-day rolling window, FLAC-compressed), scheduled for Phase 5. Until that lands, `noted` retains raw audio indefinitely and consumers must not assume any automatic pruning.
 
 ## Stop reason → terminal status mapping
 

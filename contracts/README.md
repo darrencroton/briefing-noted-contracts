@@ -4,6 +4,8 @@ Neutral contracts between `briefing` (Python orchestration) and `noted` (Swift c
 
 This directory lives inside the root repository `briefing-noted-contracts` but is the versioned surface consumers pin to. Schemas, CLI contract, on-disk layout, and vocabulary are the only things here. There is no code.
 
+The three JSON Schemas in `schemas/` are **executable contracts**, not documentation. Consumers are expected to validate their payloads against them directly with a standard JSON Schema library (e.g. Python `jsonschema`, Swift `JSONSchema`) at build time and at runtime boundaries. Compatibility semantics — how the `schema_version` pattern, closed enums, and `additionalProperties: true` interact — are specified in `versioning-policy.md`.
+
 ## What's in this directory
 
 | File | Purpose |
