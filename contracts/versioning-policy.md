@@ -7,8 +7,8 @@ This repository is the single source of truth for the cross-component contracts 
 Three kinds of version move together on each tag:
 
 1. **The repository tag** — semver on the `briefing-noted-contracts` root repo. This is the anchor consumers pin against.
-2. **Schema files** — JSON Schemas live at `schemas/<name>.v<major>.json`. The `<major>` is encoded in the filename so that a v2 schema can sit alongside v1 during a transition. Each schema file pins its own `schema_version` as `<major>.<minor>` inside the document, identical for all files in a given repo tag.
-3. **Payload `schema_version` field** — every manifest and completion payload carries `schema_version: "<major>.<minor>"`. Readers use this to decide compatibility.
+2. **Schema files** — JSON Schemas live at `schemas/<name>.v<major>.json`. The `<major>` is encoded in the filename so that a v2 schema can sit alongside v1 during a transition. Each schema file enforces its **major** version only, via a `schema_version` pattern of `^<major>\.[0-9]+$`. It does **not** pin an exact minor; that would make the schemas themselves reject forward-tolerant payloads, which is the opposite of the compatibility rule below.
+3. **Payload `schema_version` field** — every manifest and completion payload carries `schema_version: "<major>.<minor>"`. The exact minor travels with the payload and with the repo tag at the time that payload's writer was built. Readers use the major to decide compatibility and the minor (plus the repo tag's `CHANGELOG.md` entry) to reason about which optional fields and enum additions to expect.
 
 ## Compatibility rule (§8.4)
 
@@ -30,7 +30,7 @@ Three kinds of version move together on each tag:
 - Example fixtures added or corrected.
 - Clarifications that do not change any schema, enum value, file layout, CLI exit code, or vocabulary string.
 
-No schema field changes. Payload `schema_version` stays at `1.0`.
+No schema field changes. The schema files remain unchanged; producers continue emitting whatever minor they were emitting.
 
 ### Minor (1.0 → 1.1)
 
@@ -52,9 +52,14 @@ Not examples (these are **major**, see below):
 
 On a minor bump:
 
-- Bump `schema_version` in the relevant schemas to `1.1`.
-- Write a `CHANGELOG.md` entry listing the added fields / enum values.
+- **Do not edit the `schema_version` pattern in the schema files.** `schemas/manifest.v1.json` and `schemas/completion.v1.json` already accept any `1.x` via `^1\.[0-9]+$`; no change is required to admit a new minor. (If a producer needs a stricter floor — e.g. "my consumer requires at least 1.1" — enforce that in consumer code, not in the shared schema.)
+- Add the new optional fields themselves to the relevant schemas.
+- Update any descriptive references to the minor (e.g. master-plan section headings, `CHANGELOG.md` language).
+- New producers emit `schema_version: "1.1"` in their payloads; older 1.0 producers keep emitting `"1.0"` and remain valid.
+- Write a `CHANGELOG.md` entry listing the added fields.
 - Release as `v1.1.0` on the root repo.
+
+The repo tag and the payload `schema_version` carry the exact minor. The v1 schema files enforce only the major.
 
 ### Major (1.x → 2.0)
 

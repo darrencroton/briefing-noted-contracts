@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the `briefing` ↔ `noted` contracts are recorded here. Versions follow semver on the `briefing-noted-contracts` root repository; `schema_version` strings inside schema files track `<major>.<minor>` of the schema itself.
+All notable changes to the `briefing` ↔ `noted` contracts are recorded here. Versions follow semver on the `briefing-noted-contracts` root repository. The v1 schema files enforce only the major (`^1\.[0-9]+$` on `schema_version`); the exact minor lives in the repo tag and in each payload's `schema_version` field. See `versioning-policy.md`.
 
 Rules for bumps and the change-proposal process live in `versioning-policy.md`.
 
