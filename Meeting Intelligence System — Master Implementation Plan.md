@@ -423,7 +423,7 @@ The manifest is the single handoff object describing one meeting instance. `brie
 
 **Reserved (present in v1.0 for forward compatibility; not yet consumed):**
 
-- `recording_policy.max_single_extension_minutes` — reserved for §27.12.
+- `recording_policy.max_single_extension_minutes` — reserved. Not consumed by the §27.12(c) extension policy; preserved for a future cap if one is added.
 - `hooks.completion_callback` — reserved for a future per-session callback mechanism. Always `null` in v1.
 
 ### 8.4 Schema Compatibility
@@ -604,7 +604,7 @@ Extends the scheduled stop by N minutes (typically 5). Idempotent within a singl
 |0   |Extension applied                                  |
 |2   |Unknown session ID                                 |
 |3   |Session not in `recording`                         |
-|6   |Extension rejected (policy — e.g. already extended)|
+|6   |Extension rejected (policy)                        |
 
 **`noted switch-next --session-id <id>`**
 
@@ -787,7 +787,15 @@ At `scheduled_end_time − pre_end_prompt_minutes`, `noted` must:
 
 ### 12.4 Extension Policy
 
-In v1, a user may click **+5 minutes** only once per session. The popup does not re-appear after an extension. Further extensions require a new popup policy; not in scope for v1 unless revisited in §27.
+Per §27.12 decision (c), a user may keep extending a session as many times as they want. Each extension adds `default_extension_minutes` to the current scheduled stop.
+
+After the first **+5 minutes** press, the full end-of-meeting popup (Stop / +5 / Next Meeting) is replaced for subsequent extensions by a simpler follow-up notification with a single **Still going** action that grants another `default_extension_minutes`. Each follow-up notification fires at the new `scheduled_end_time − pre_end_prompt_minutes` (or immediately before the new stop deadline, whichever is sooner) and is dismissible by doing nothing, in which case the no-interaction rules in §12.3 apply against the new stop deadline.
+
+Notes:
+
+- Each extension writes an updated `scheduled_end_time` to `runtime/status.json` and increments `current_extension_minutes` by `default_extension_minutes`.
+- The **Next Meeting** action is never re-offered in the simpler follow-up notification. If a next meeting existed at the original popup, the user has already seen it; if they chose to extend instead, the next meeting's popup-level handoff is effectively forfeited. `briefing watch` will have invalidated or updated the pre-prepared next manifest by then anyway.
+- `max_single_extension_minutes` in the manifest schema is reserved but not consumed by this policy; see §8.3.
 
 ### 12.5 Ownership
 
@@ -1549,7 +1557,7 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 ### 27.12 Extension Policy — Beyond One +5
 
-**Context:** §12.4 locks v1 to a single `+5 minutes` action. Long meetings with one legitimate overrun aren’t well served.
+**Context:** The original v1 rule (as drafted) would have locked the popup to a single `+5 minutes` action, which does not serve long meetings with one legitimate overrun. §12.4 has been updated to reflect the decision below.
 
 **Options:**
 

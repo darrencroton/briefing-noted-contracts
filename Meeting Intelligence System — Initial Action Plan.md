@@ -225,9 +225,12 @@ Tag `v1.0.0` the moment all of the above is reviewed and merged. Do not commit c
 
 ### Questions to ask at review
 
-- “If someone in six months wants to add a new field to the manifest, what exactly do they do? Walk me through the process.”
-- “Can `noted` and `briefing` be built and tested independently against these schemas, with no shared code?”
-- “What happens if `noted` produces a completion file with `schema_version: 1.1` and `briefing` only understands 1.0?”
+- **“If someone in six months wants to add a new field to the manifest, what exactly do they do? Walk me through the process.”**
+  Open a PR against `briefing-noted-contracts` that: (i) edits the relevant `schemas/<name>.v1.json` to add the field; (ii) classifies the change as patch, minor, or major per `contracts/versioning-policy.md`; (iii) adds a `CHANGELOG.md` entry; (iv) includes a one-paragraph migration note for consumers. Adding a new optional field or a new enum value is a **minor** bump (additive, backward-compatible) — existing 1.0 producers keep working. Adding a new required field, tightening an existing field, or renaming/removing anything is a **major** bump and requires new schema files at `schemas/<name>.v2.json` alongside the v1 files, plus a rollout plan naming the `briefing` and `noted` branches that will adopt v2. After approval and merge, a `vX.Y.Z` tag is cut **immediately** on the root repo. Each consumer then opens its own PR to bump its pinned tag. Untagged contracts commits are not considered released.
+- **“Can `noted` and `briefing` be built and tested independently against these schemas, with no shared code?”**
+  Yes. `contracts/` contains only JSON Schemas and Markdown specs — no executable code. Each repo pulls the pinned contracts tag (git submodule or tarball fetch) and validates its payloads using its own stack's JSON-Schema library (Python `jsonschema` on the `briefing` side, a Swift JSON-Schema library or a hand-written validator on the `noted` side). Step 5 adds shared fixtures (valid and invalid manifests, example completion files, a smoke-test WAV) that both sides load from the same pinned tag, so each repo can run its contract tests in isolation without needing the other installed.
+- **“What happens if `noted` produces a completion file with `schema_version: 1.1` and `briefing` only understands 1.0?”**
+  `briefing` accepts it. The compatibility rule in `versioning-policy.md` (mirroring master-plan §8.4) is forward-tolerate-minor: a v1.0 reader ignores unknown fields in a v1.1 payload and proceeds. `briefing` only rejects on (a) major-version mismatch — e.g. `schema_version: "2.0"` against a 1.x reader — which returns a validation error and `noted validate-manifest` exit 2; or (b) missing required fields, which still fail. The reverse case (1.0 producer, 1.1 reader expecting a 1.1-required field) is also a failure: backward-strict minor. In practice this means feature additions are safe to roll out on either side at a time; breaking changes are not and force a coordinated major bump.
 
 -----
 
