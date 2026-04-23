@@ -47,7 +47,7 @@ You end up with three Git repositories, even though the plan talks about two com
 
 1. **`briefing`** — the existing Python orchestration app. Stays where it is: `github.com/darrencroton/briefing`.
 2. **`noted`** — the new Swift menubar app, forked from HushScribe then stripped.
-3. **`meeting-intelligence-contracts`** — a small, neutral repo that owns the manifest schema, completion.json schema, runtime status schema, CLI contract, and shared test fixtures.
+3. **`briefing-noted-contracts`** — a small, neutral repo that owns the manifest schema, completion.json schema, runtime status schema, CLI contract, and shared test fixtures. Its `contracts/` subdirectory holds the schemas, specs, and fixtures; planning documents live at the repo root.
 
 The contracts repo is the single most important structural decision in this whole project. Without it, you have two independent codebases implementing the same handoff interface, and nothing forces them to stay aligned. With it, any change to the handoff interface has to be made in one place, versioned, and picked up by both sides deliberately. That is exactly the discipline the master plan’s invariants demand.
 
@@ -182,7 +182,7 @@ Then you make the decision. Edit the master plan in-place — add a dated decisi
 
 -----
 
-## Step 3 — Create the contracts repo and lock Phase 1 contracts
+## Step 3 — Populate the contracts repo and lock Phase 1 contracts
 
 ### Why this matters
 
@@ -192,9 +192,9 @@ This is also the most deferrable-feeling step, which is precisely why it’s the
 
 ### What you’re directing
 
-Create the repo and populate it. The dev team does the scaffolding; you review every artefact personally before it’s tagged.
+The `briefing-noted-contracts` repo already exists. Populate the `contracts/` subdirectory. The dev team does the scaffolding; you review every artefact personally before it’s tagged.
 
-The initial contents, derived directly from the master plan:
+The initial contents of `contracts/`, derived directly from the master plan:
 
 - `schemas/manifest.v1.json` — JSON Schema for §8 manifest, all fields with types and constraints.
 - `schemas/completion.v1.json` — JSON Schema for §11.3 completion file.
@@ -204,14 +204,15 @@ The initial contents, derived directly from the master plan:
 - `vocabulary.md` — the locked vocabulary from §26 (stop reasons, terminal statuses, transcript filenames, timezone handling).
 - `versioning-policy.md` — how schema versions evolve (§8.4), how breaking changes are handled, who authorises them.
 - `fixtures/` — empty for now, filled in Step 5.
-- `README.md` — what this repo is, how to consume it, how to propose changes.
 - `CHANGELOG.md` — starting at `v1.0.0`.
+
+The root `README.md` already describes what this repo is and its high-level structure. The change-proposal process (what triggers a minor vs major bump, who approves) should be added to that README as part of this step.
 
 Tag `v1.0.0` the moment all of the above is reviewed and merged. Do not commit contracts with schema_version 1.0 that are not tagged — the tag is the thing that makes “schema v1.0” a real, immutable reference.
 
 ### What “done” looks like
 
-- Contracts repo exists, all files above present and merged to `main`.
+- All files above present in `contracts/` and merged to `main`.
 - Tagged `v1.0.0`.
 - Both `briefing` and `noted` repos have an agreed mechanism to consume the contracts (submodule, pinned-tag fetch, or similar).
 - A change-proposal process is written down in the contracts repo’s `README.md`: what triggers a minor version bump, what triggers a major version bump, who approves.
@@ -427,7 +428,7 @@ If any of these fail, you’ve found a real bug — either in code or in the con
 These are quick — but they’re blockers.
 
 1. **Fork strategy for `noted`**: fresh repo with squashed import, or GitHub fork + strip branch? (Recommended: fresh repo.)
-2. **Contracts repo name**: `meeting-intelligence-contracts`? Something else? (Whatever you pick, pick it now — it gets referenced in both other repos.)
+2. **Contracts repo name**: ~~`meeting-intelligence-contracts`?~~ **Decided: `briefing-noted-contracts`** (GitHub: `github.com/darrencroton/briefing-noted-contracts`). Local directory is `contracts/` within that repo.
 3. **Contracts consumption mechanism**: git submodule, pinned-tag fetch, or copied folder with CI check? (Recommended: pinned-tag fetch. But the dev team may have strong preferences.)
 4. **Bundle identifier for `noted`**: what reverse-domain form do you own or plan to use? (Something like `app.noted.Noted` works as a placeholder.)
 5. **Target macOS version**: HushScribe is macOS 26+, Apple Silicon only. Is that acceptable? (For your own use, yes. If the dev team is on older hardware, that’s a conversation.)
