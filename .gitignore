@@ -1,2 +1,11 @@
-noted
-briefing
+# Subrepos — managed independently (contracts/ is part of this repo, not excluded)
+briefing/
+noted/
+
+# Claude Code
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
