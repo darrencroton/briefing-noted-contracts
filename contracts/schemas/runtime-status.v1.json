@@ -45,17 +45,20 @@
     "started_at": {
       "description": "When capture actually began (moment of the recording-start bell). Null before capture starts.",
       "type": ["string", "null"],
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
     },
     "updated_at": {
       "description": "When this status record was last written. ISO-8601 with explicit timezone offset.",
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
     },
     "scheduled_end_time": {
       "description": "Echoed from the manifest, reflecting any active extension. Null for ad hoc sessions with no scheduled end.",
       "type": ["string", "null"],
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
     },
     "current_extension_minutes": {
       "description": "Total minutes added by +5 presses in this session.",

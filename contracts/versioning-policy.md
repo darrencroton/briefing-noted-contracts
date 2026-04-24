@@ -32,6 +32,14 @@ Three kinds of version move together on each tag:
 
 No schema field changes. The schema files remain unchanged; producers continue emitting whatever minor they were emitting.
 
+**Exception — pre-consumer oversight correction.** When a constraint was stated in the system architecture documents (master plan, supplemental guardrails) but accidentally omitted from the schema, the repository owner may issue a patch release that adds the missing schema enforcement, provided all three conditions are met:
+
+1. No consumer has ever produced a payload under the released schema.
+2. The added constraint is restorative — it makes the schema match documented intent, not a new requirement.
+3. The owner records explicit sign-off in the CHANGELOG entry for that release.
+
+This exception applies to early pre-consumer corrections only. Once either `briefing` or `noted` ships a payload-producing release, all constraint tightening must follow the normal major-bump path.
+
 ### Minor (1.0 → 1.1)
 
 Additive, backward-compatible changes **only**. Consumers on 1.0 must continue to work against 1.1 payloads, and consumers on 1.1 must still accept 1.0 payloads that omit fields introduced in 1.1.

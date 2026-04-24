@@ -4,7 +4,7 @@ Neutral contracts between `briefing` (Python orchestration) and `noted` (Swift c
 
 This directory lives inside the root repository `briefing-noted-contracts` but is the versioned surface consumers pin to. Schemas, CLI contract, on-disk layout, and vocabulary are the only things here. There is no code.
 
-The three JSON Schemas in `schemas/` are **executable contracts**, not documentation. Consumers are expected to validate their payloads against them directly with a standard JSON Schema library (e.g. Python `jsonschema`, Swift `JSONSchema`) at build time and at runtime boundaries. Compatibility semantics — how the `schema_version` pattern, closed enums, and `additionalProperties: true` interact — are specified in `versioning-policy.md`.
+The three JSON Schemas in `schemas/` are **executable contracts**, not documentation. Consumers are expected to validate their payloads against them directly with a standard JSON Schema library (e.g. Python `jsonschema`, Swift `JSONSchema`) at build time and at runtime boundaries. Consumers must enable JSON Schema `format` assertion when validating timestamp fields; the schemas combine `format: date-time` for RFC 3339 shape with a suffix pattern for the explicit-offset guardrail. Compatibility semantics — how the `schema_version` pattern, closed enums, and `additionalProperties: true` interact — are specified in `versioning-policy.md`.
 
 ## What's in this directory
 
@@ -17,7 +17,7 @@ The three JSON Schemas in `schemas/` are **executable contracts**, not documenta
 | `session-directory.md` | On-disk layout and file-requirements table (§11). |
 | `vocabulary.md` | Locked vocabulary: stop reasons, statuses, phases, filenames (§26). |
 | `versioning-policy.md` | How schema versions evolve; change-proposal process. |
-| `fixtures/` | Test fixtures. Empty in v1.0.0; populated in Step 5 of the action plan. |
+| `fixtures/` | Shared valid/invalid manifests, completion examples, and generated smoke-test audio for consumer tests. |
 | `CHANGELOG.md` | Versioned change log. |
 
 ## How to consume this contract

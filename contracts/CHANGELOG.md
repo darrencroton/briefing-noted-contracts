@@ -4,6 +4,40 @@ All notable changes to the `briefing` ↔ `noted` contracts are recorded here. V
 
 Rules for bumps and the change-proposal process live in `versioning-policy.md`.
 
+## [1.0.1] — 2026-04-24
+
+Step 5 of the Initial Action Plan: shared fixtures for consumer contract tests.
+
+### Added
+
+- Manifest fixtures:
+  - `fixtures/manifests/valid-inperson.json`
+  - `fixtures/manifests/valid-adhoc.json`
+  - `fixtures/manifests/valid-with-next-meeting.json`
+  - `fixtures/manifests/invalid-missing-required.json`
+  - `fixtures/manifests/invalid-bad-timezone.json`
+  - `fixtures/manifests/invalid-naive-scheduled-end-time.json`
+- Completion fixtures:
+  - `fixtures/completions/completed.json`
+  - `fixtures/completions/completed-with-warnings.json`
+  - `fixtures/completions/failed-startup.json`
+  - `fixtures/completions/failed-capture.json`
+- `fixtures/audio/smoke-30s.wav`, a generated 30-second mono WAV for capture-replacement smoke tests.
+- `fixtures/README.md`, documenting each fixture's contract purpose.
+
+### Fixed
+
+- Timestamp fields in the manifest, completion, and runtime-status schemas now require an explicit timezone suffix (`Z` or `+/-HH:MM`) in addition to `format: date-time`. Validators must enable JSON Schema format assertion to enforce the full RFC 3339 date-time shape.
+
+### Classification note
+
+The timestamp `pattern` additions to `manifest.v1.json`, `completion.v1.json`, and `runtime-status.v1.json` would ordinarily be a major bump under the versioning policy (tightening a constraint that previously accepted a value). They are classified as a patch under the pre-consumer oversight correction exception added to `versioning-policy.md` in this release:
+
+- The no-naive-timestamps invariant was stated in the system architecture before v1.0.0 was tagged (master plan timestamp rule; Supplemental Implementation Guardrails §4).
+- The `pattern` enforcement was accidentally omitted from v1.0.0.
+- Neither `briefing` nor `noted` has produced any payload under the v1.0.0 schema; no existing payload can be broken by this correction.
+- Owner sign-off: Darren Croton, 2026-04-24.
+
 ## [1.0.0] — 2026-04-23
 
 Phase 1 (Lock Contracts) of the Master Implementation Plan. First tagged release.
@@ -47,3 +81,4 @@ Open items whose resolution is not yet reflected here because they do not affect
 - §27.10 retention policy — Phase 5.
 
 [1.0.0]: https://github.com/darrencroton/briefing-noted-contracts/releases/tag/v1.0.0
+[1.0.1]: https://github.com/darrencroton/briefing-noted-contracts/releases/tag/v1.0.1

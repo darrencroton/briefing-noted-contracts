@@ -16,7 +16,8 @@ Read these before making architectural decisions:
 
 ## `contracts/` — schemas, specs, and fixtures
 
-Currently **empty**. Phase 1 (Master Plan §23) populates `contracts/` with:
+`contracts/` contains the neutral contract surface consumed by `briefing` and
+`noted`:
 
 - `schemas/manifest.v1.json`
 - `schemas/completion.v1.json`

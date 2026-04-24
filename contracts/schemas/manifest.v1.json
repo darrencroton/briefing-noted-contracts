@@ -31,7 +31,8 @@
     "created_at": {
       "description": "Time the manifest was written. ISO-8601 with explicit timezone offset.",
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
     },
     "meeting": {
       "type": "object",
@@ -50,12 +51,14 @@
         "start_time": {
           "description": "Scheduled meeting start. ISO-8601 with explicit timezone offset.",
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
         },
         "scheduled_end_time": {
           "description": "Scheduled meeting end. ISO-8601 with offset. Null only for ad hoc sessions (§20.1); end-of-meeting popup logic is suppressed in that case.",
           "type": ["string", "null"],
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
         },
         "timezone": {
           "description": "IANA timezone name (e.g. Australia/Melbourne).",
@@ -130,7 +133,8 @@
         "title": { "type": "string" },
         "start_time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
         },
         "manifest_path": {
           "description": "Absolute path to the pre-prepared next manifest. briefing writes this in advance; noted switch-next invokes noted start on it directly. Expected to be present when exists=true; absence is tolerated (switch-next will then return exit 3 or 8).",
