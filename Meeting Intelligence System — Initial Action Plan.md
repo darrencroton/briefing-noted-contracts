@@ -4,6 +4,8 @@
 **Purpose:** Take you from “master plan exists, no code touched yet” to “both repos scaffolded, contracts locked, first vertical slice in progress” — without painting yourself into any architectural corners.
 **How to use:** Work through the steps in order. Each step tells you *why it matters*, *what you’re directing*, *what “done” looks like*, *pitfalls*, and *questions to ask the dev team* so you can run reviews credibly. Do not skip ahead — several steps depend on earlier ones being properly closed out.
 
+> **Status update, 2026-04-25:** The original bring-up path through Step 7 is complete. `noted` Phase 2 (N-01 through N-13), `briefing` Phase 4a ingest (B-12 through B-20), Step 7/B-21, `briefing` Phase 4b planning/watch (B-01 through B-11), and `noted` Phase 3 plus N-25 (N-14 through N-20, N-25) are complete. The next work is polish: N-21 through N-24 and B-22 through B-25. Phase 5 hardening should wait for operational data from those completed flows.
+
 -----
 
 ## Is this a good idea?
@@ -377,6 +379,8 @@ The dev team reviews both plans, pushes back on anything unworkable, and then us
 -----
 
 ## Step 7 — First vertical slice, end to end
+
+> **Completion note:** This section preserves the original Step 7 target scope. The completed 2026-04-24 slice went further than the stub target: it used real `noted` capture output and `briefing session-ingest` wrote a managed LLM summary block. Later Phase 4b work added `briefing watch`; that was intentionally outside this original Step 7 scope.
 
 ### Why this matters
 
