@@ -29,6 +29,10 @@ Read these before making architectural decisions:
 - `ASR Stack Recommendation — Swift vs Python.md` — recorded decision on ASR/diarization stack.
 - `AGENTS.md` — guidance for AI agents working in this repo (symlink to canonical external file).
 
+## User walkthroughs
+
+- `docs/meeting-intelligence-user-walkthroughs.md` - step-by-step setup and smoke workflows for installing `briefing` and `noted`, creating a scheduled test Calendar event, verifying automatic recording and popup behavior, and running an ad hoc recording.
+
 ## `contracts/` — schemas, specs, and fixtures
 
 `contracts/` contains the neutral contract surface consumed by `briefing` and
