@@ -26,12 +26,13 @@ Read these before making architectural decisions:
 - `Meeting Intelligence System — Master Implementation Plan.md` — authoritative system design, schemas, CLI contract, phases, open questions (§27) with recorded decisions.
 - `Supplemental Implementation Guardrails.md` — 12 non-negotiable invariants, derivative of the master plan. In any conflict, the master plan wins.
 - `Meeting Intelligence System — Initial Action Plan.md` — step-by-step bring-up sequence (7 steps).
+- `Meeting Intelligence System — Post-Soak Action Plan.md` — one-week trial checklist, issue log, and deferred hardening queue.
 - `ASR Stack Recommendation — Swift vs Python.md` — recorded decision on ASR/diarization stack.
 - `AGENTS.md` — guidance for AI agents working in this repo (symlink to canonical external file).
 
 ## User walkthroughs
 
-- `docs/meeting-intelligence-user-walkthroughs.md` - step-by-step setup and smoke workflows for installing `briefing` and `noted`, creating a scheduled test Calendar event, verifying automatic recording and popup behavior, and running an ad hoc recording.
+- `Meeting Intelligence User Walkthroughs.md` - step-by-step setup and smoke workflows for installing `briefing` and `noted`, creating a scheduled test Calendar event, verifying automatic recording and popup behavior, and running an ad hoc recording.
 
 ## `contracts/` — schemas, specs, and fixtures
 

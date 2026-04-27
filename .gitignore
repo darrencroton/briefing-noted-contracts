@@ -5,6 +5,9 @@ noted/
 # Claude Code
 .claude/
 
+# Archived local material
+archive/
+
 # macOS
 .DS_Store
 .AppleDouble
