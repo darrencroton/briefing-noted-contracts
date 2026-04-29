@@ -6,7 +6,7 @@ Root repository for the Meeting Intelligence System. Tracks project-wide plannin
 
 ## Current implementation status
 
-Completed as of 2026-04-25:
+Completed as of 2026-04-29:
 
 - `noted` Phase 2, N-01 through N-13: minimal runtime, manifest validation, canonical session directory, fast stop, async post-processing, and completion output.
 - `briefing` Phase 4a, B-12 through B-20: completion reader, transcript adapter, post-meeting prompt, managed `## Meeting Summary` writer, and `session-ingest`.
@@ -14,6 +14,8 @@ Completed as of 2026-04-25:
 - `briefing` Phase 4b, B-01 through B-11: settings, `noted config` parsing, manifest assembly, `session-plan`, `watch`, invalidation, and watcher `launchd`.
 - `noted` Phase 3 plus N-25, N-14 through N-20 and N-25: popup, `extend`, `switch-next`, auto-stop/auto-switch, `ui_state`, back-to-back tests, and next-manifest invalidation handling.
 - Polish tickets N-21 through N-24 and B-22 through B-25: automatic ingest handoff, ad hoc canonical Start, cross-boundary diagnostics, dry-runs, formal smoke script, and user docs.
+- Phase 5A pre-soak hardening: `noted wait`, Meeting Intelligence `validate` preflight, one-week soak runbook, and the summary eval set.
+- Current UX polish: centered `noted` end-of-meeting popup, menubar settings for model cache status / input microphone / auto-ingest, WhisperKit cache under Application Support, and visible `## Meeting Summary` sections without hidden Markdown comments.
 
 Next work:
 

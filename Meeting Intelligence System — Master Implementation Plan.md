@@ -897,7 +897,7 @@ For the primary use case this defaults to `en-AU` in `noted` settings.
 
 Default: **FluidAudio offline diarizer** (see §27.9), run post-capture on the system-audio stream. In-process, Swift-native, no Python runtime required. May fail cleanly — the pipeline must continue with a diarization-less transcript, and `diarization_ok: false` must be set in `completion.json` with a warning.
 
-Speaker labels produced by the diarizer are opaque identifiers (`speaker_0`, `speaker_1`, …). `noted` does **not** surface an interactive speaker-naming UI — HushScribe's `SpeakerNamingView` is STRIPped (see `noted/hushscribe-triage.md`). Binding opaque IDs to real names is handled by `briefing` at summarisation time using `host_name` and `participant_names` hints, per the attribution policy in §16.3–§16.4.
+Speaker labels produced by the diarizer are opaque identifiers (`speaker_0`, `speaker_1`, …). `noted` does **not** surface an interactive speaker-naming UI. Binding opaque IDs to real names is handled by `briefing` at summarisation time using `host_name` and `participant_names` hints, per the attribution policy in §16.3–§16.4.
 
 ### 15.5 Transcript Outputs
 
@@ -949,21 +949,21 @@ The summary is written into the *same* Markdown note that already holds the user
 
 ### 17.2 Managed Blocks
 
-`briefing` already manages a `## Briefing` block and preserves everything from `## Meeting Notes` onward as user-owned, carried forward into subsequent notes as prior context. This plan introduces one additional managed block: the post-meeting summary. Its exact heading, position in the note, and behaviour relative to `## Meeting Notes` is the single most load-bearing undefined contract in this document (§27.4).
+`briefing` already manages a `## Briefing` block and preserves everything from `## Meeting Notes` onward as user-owned, carried forward into subsequent notes as prior context. This plan introduces one additional managed section: the post-meeting `## Meeting Summary`. Its heading, position in the note, and behaviour relative to `## Meeting Notes` are decided in §27.4.
 
 ### 17.3 Managed-Block Invariants
 
 Regardless of which option in §27.4 is chosen, the following must hold:
 
-- The summary block must be idempotent: re-running summarisation replaces the block, not the surrounding content.
+- The summary section must be idempotent: re-running summarisation replaces the section, not the surrounding content.
 - The user’s own notes must never be touched.
 - The pre-meeting `## Briefing` block must never be touched by the summary workflow.
 - The managed block boundaries must be machine-detectable (comment markers or explicit heading) so that regeneration is safe.
-- A note without the managed block is a valid input; the block is inserted on first summarisation.
+- A note without the managed summary section is a valid input; the section is inserted on first summarisation.
 
 ### 17.4 Carry-Forward Interaction
 
-`briefing`‘s `previous_note` source adapter currently feeds everything from `## Meeting Notes` onward into subsequent pre-meeting briefings as prior context. The summary block’s placement (§27.4) determines whether the machine-generated summary becomes part of that carry-forward:
+`briefing`‘s `previous_note` source adapter currently feeds everything from `## Meeting Notes` onward into subsequent pre-meeting briefings as prior context. The summary section’s placement (§27.4) determines whether the machine-generated summary becomes part of that carry-forward:
 
 - Under **option (a)** — summary above `## Meeting Notes` — the summary is *not* carried forward. Only the user’s own notes feed future briefings. This is simpler and prevents machine-generated content from contaminating the pre-briefing pipeline.
 - Under **option (b)** — summary below `## Meeting Notes` — the summary *is* carried forward alongside user notes. This gives future briefings richer context but risks feedback loops.
@@ -976,18 +976,18 @@ This trade-off is part of the §27.4 decision and should be made deliberately, n
 
 ### 17.6 Collision Policy
 
-If the target note exists and contains a managed summary block, the block is replaced. If it exists without one, the block is inserted. The note is never silently overwritten.
+If the target note exists and contains a managed `## Meeting Summary` section, the section is replaced. If it exists without one, the section is inserted. The note is never silently overwritten.
 
 ### 17.7 Note Creation When Missing
 
-If the target note does not exist at ingest time, `briefing` creates it from the standard `meeting_note.md` template and then inserts the managed summary block. This can happen when a meeting was recorded without a pre-meeting briefing (e.g., the calendar event was added last-minute, or briefing failed earlier in the day). The created note contains:
+If the target note does not exist at ingest time, `briefing` creates it from the standard `meeting_note.md` template and then inserts the managed summary section. This can happen when a meeting was recorded without a pre-meeting briefing (e.g., the calendar event was added last-minute, or briefing failed earlier in the day). The created note contains:
 
 - Standard frontmatter per `meeting_note.md`.
 - An empty `## Briefing` block (so the shape is identical to briefed notes).
-- The managed summary block with the just-generated summary.
 - An empty `## Meeting Notes` section for the user.
+- A `---` divider followed by the managed `## Meeting Summary` section with the just-generated summary.
 
-This keeps every meeting note structurally identical regardless of whether it was briefed, and keeps the user-owned `## Meeting Notes` section consistently the last thing in the file.
+This keeps every meeting note structurally identical regardless of whether it was briefed, and keeps the post-meeting summary in the §27.4 decision position at the end of the file.
 
 -----
 
@@ -1025,7 +1025,7 @@ This plan *extends* `briefing`; it does not duplicate it. Dev team familiarity w
 - Do not create a second orchestration layer in `noted`.
 - Do not re-implement calendar access in `noted`.
 - Do not bypass the source-adapter model by feeding the transcript directly to the LLM call site.
-- Do not fork `briefing`’s note-writing logic for the summary block; reuse the managed-block mechanism and extend it.
+- Do not fork `briefing`’s note-writing logic for the summary section; reuse the managed-section mechanism and extend it.
 
 -----
 
@@ -1130,15 +1130,20 @@ Linking an ad hoc session to a calendar event that turned up later (e.g., the us
 
 `noted` maintains a small settings file at a platform-standard location (e.g., `~/Library/Application Support/noted/settings.toml`). It is deliberately minimal. In v1:
 
-|Key                  |Purpose                                                                              |
-|---------------------|-------------------------------------------------------------------------------------|
-|`host_name`          |Default host name if not provided in a manifest                                      |
-|`default_audio_input`|Audio device used for `in_person` capture                                            |
-|`asr_backend`        |Default ASR backend: one of `whisperkit` (default), `fluidaudio-parakeet`, `sfspeech`|
-|`asr_model_variant`  |Backend-specific model variant (e.g., Whisper `base`/`large-v3` for `whisperkit`; Parakeet checkpoint for `fluidaudio-parakeet`)|
-|`asr_language`       |BCP-47 language tag (default `en-AU` per the primary use case)                       |
-|`log_level`          |One of `debug`, `info`, `warn`, `error`                                              |
-|`output_root`        |Default parent directory for session directories when a manifest does not specify one|
+|Key                           |Purpose                                                                                         |
+|------------------------------|------------------------------------------------------------------------------------------------|
+|`host_name`                   |Default host name if not provided in a manifest                                                 |
+|`default_input_device`        |Audio device used for `in_person` capture; `0` means the current system default                 |
+|`asr_backend`                 |Default ASR backend: one of `whisperkit`, `fluidaudio-parakeet`, `sfspeech`                     |
+|`asr_model_variant`           |Backend-specific model variant (e.g., Whisper `base`/`large-v3`; Parakeet `parakeet-v3`)        |
+|`language`                    |BCP-47 language tag                                                                             |
+|`output_root`                 |Default parent directory for ad hoc session directories and ad hoc notes                        |
+|`briefing_command`            |Command `noted` invokes for automatic `briefing session-ingest` handoff                         |
+|`ingest_after_completion`     |Whether to invoke `briefing session-ingest` after `completion.json` is written                  |
+|`diarization_enabled`         |Default diarization setting for ad hoc manifests                                                |
+|`default_extension_minutes`   |Default extension length for ad hoc manifests and fallback UI                                   |
+|`pre_end_prompt_minutes`      |Minutes before scheduled end when the popup appears                                             |
+|`no_interaction_grace_minutes`|Grace period before default stop/switch behavior applies                                        |
 
 Settings that belong to a specific meeting (mode, participants, etc.) live in the manifest, not here. Settings do not grow `noted` into a second workflow tool.
 
@@ -1232,10 +1237,10 @@ Each phase has a success criterion that must be demonstrable before moving on.
 - New `transcript` source adapter.
 - New `post_meeting_summary.md` prompt template.
 - `briefing session-plan` and `briefing session-ingest` subcommands.
-- Managed summary block in the Obsidian note, per the §27.4 decision.
+- Managed `## Meeting Summary` section in the Obsidian note, per the §27.4 decision.
 - `briefing` trigger mechanism per §27.1 decision.
 
-**Success criterion:** a calendar event flagged for recording results, with no manual intervention, in an Obsidian note containing a summary block. The end-to-end path works for at least one real recorded meeting.
+**Success criterion:** a calendar event flagged for recording results, with no manual intervention, in an Obsidian note containing a `## Meeting Summary` section. The end-to-end path works for at least one real recorded meeting.
 
 ### Phase 5 — Hardening
 

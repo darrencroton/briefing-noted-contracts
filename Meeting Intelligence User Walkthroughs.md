@@ -81,9 +81,11 @@ Open the `noted` menubar menu and choose `Settings...`.
 For this walkthrough, use:
 
 - `Transcription Model`: `Whisper Base` or the default model if you prefer
+- confirm the model cache status is either `Cached` or `Built in` before depending on offline use
 - `Locale`: `en-AU`
-- `Output Directory`: leave the default unless you intentionally want sessions somewhere else
-- `Hide windows from screen sharing`: on
+- `Input Microphone`: `System Default` unless you intentionally want a specific microphone
+- `Auto-ingest to Briefing`: on
+- `Default Directory`: leave the default unless you intentionally want sessions somewhere else
 
 Do not edit `~/Library/Application Support/noted/settings.toml` for this walkthrough.
 
@@ -108,7 +110,7 @@ mkdir -p "$HOME/.local/bin"
 ln -sf "/Users/dcroton/Local/git-repos/dev/noted/dist/Noted.app/Contents/MacOS/Noted" "$HOME/.local/bin/noted"
 ```
 
-Current limitation: `noted` also needs to know how to call `briefing` after a recording finishes if you want automatic post-meeting summaries. That handoff command is not currently exposed in the `noted` Settings window. Do not edit the hidden settings file for this walkthrough; this is tracked as a product TODO below.
+`noted` invokes `briefing session-ingest` automatically after a recording finishes when Auto-ingest is on and the `briefing` command is on the PATH visible to the app.
 
 ## Config
 
@@ -154,7 +156,7 @@ This proves the full scheduled flow:
 3. `briefing watch` starts `noted` automatically before the meeting
 4. `noted` shows the end-of-meeting popup
 5. `noted` processes the recording
-6. `briefing` writes the post-meeting summary if the handoff command has already been configured by your installation
+6. `briefing` writes the post-meeting summary when Auto-ingest is on and `briefing` is available on PATH
 
 ### 1. Create the test Calendar event
 
@@ -240,8 +242,7 @@ Open the meeting note again. Expected result for the pre-meeting note:
 
 - the original `## Briefing` block is still present
 - your `## Meeting Notes` area is preserved
-
-If your installation already configures the `noted` to `briefing` handoff, a managed `## Meeting Summary` block should also be added. If not, the recording can still be verified in `noted`, but automatic summary writing needs the product TODO below.
+- a `---` divider and `## Meeting Summary` section have been appended at the end of the note
 
 ## User Story 3: Ad Hoc Recording
 
@@ -263,12 +264,7 @@ Speak for at least one minute so there is enough audio to transcribe.
 
 ### 2. Stop recording
 
-Current limitation: the menubar UI can start an ad hoc session, but it does not currently expose a normal Stop button for that ad hoc session. Until that is fixed, use this temporary Terminal workaround:
-
-```bash
-SESSION_ID=$(/usr/bin/plutil -extract session_id raw -o - "$HOME/Library/Application Support/noted/runtime/active-capture.json")
-noted stop --session-id "$SESSION_ID"
-```
+Open the `noted` menubar menu and choose `Stop Recording`.
 
 Expected result:
 
@@ -280,16 +276,16 @@ Expected result:
 
 Open the output directory shown in `noted` Settings.
 
-Expected result: the latest ad hoc session directory contains recording output, transcript files, and `outputs/completion.json`.
+Expected result:
 
-Current limitation: the app Settings window does not yet expose the handoff settings needed to choose where ad hoc notes go or how `noted` should invoke `briefing` after completion. Until that is exposed in the menubar UI, ad hoc recording can be verified from `noted` output, but user-friendly ad hoc summary ingestion is not fully configurable from the app.
+- the latest ad hoc session directory contains recording output, transcript files, and `outputs/completion.json`
+- the ad hoc note is written directly under the Default Directory as `<session-id>.md`
+- if Auto-ingest is on and `briefing` is available on PATH, the note includes a `---` divider and `## Meeting Summary` section
 
 ## Product TODOs
 
 These should be addressed before this walkthrough is copied into the `briefing` or `noted` repos as end-user documentation:
 
-- Add `noted` menubar Settings fields for ad hoc note directory, `briefing` handoff command, and automatic ingest on/off.
-- Add a normal Stop control for active ad hoc sessions in the `noted` menubar UI.
 - Add a user-facing way to reveal the latest session directory from the `noted` menubar status panel.
 - Add a user-facing way to rerun or trigger `briefing session-ingest` for the latest completed session.
 - Make `briefing` setup install or expose a stable `briefing` command that `noted` can call without users creating wrapper scripts.

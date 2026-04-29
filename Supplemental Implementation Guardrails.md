@@ -364,7 +364,7 @@ The Obsidian meeting note has **managed blocks** (owned by `briefing`, rewritten
 
 - create the note from the template if it does not exist
 - insert or replace the `## Briefing` managed block
-- insert or replace the managed summary block
+- insert or replace the managed `## Meeting Summary` section
 - preserve everything else verbatim
 
 `briefing` must NOT:
