@@ -15,7 +15,7 @@ Completed as of 2026-04-29:
 - `noted` Phase 3 plus N-25, N-14 through N-20 and N-25: popup, `extend`, `switch-next`, auto-stop/auto-switch, `ui_state`, back-to-back tests, and next-manifest invalidation handling.
 - Polish tickets N-21 through N-24 and B-22 through B-25: automatic ingest handoff, ad hoc canonical Start, cross-boundary diagnostics, dry-runs, formal smoke script, and user docs.
 - Phase 5A pre-soak hardening: `noted wait`, Meeting Intelligence `validate` preflight, one-week soak runbook, and the summary eval set.
-- Current UX polish: centered `noted` end-of-meeting popup, menubar settings for model cache status / input microphone / auto-ingest, WhisperKit cache under Application Support, visible `## Meeting Summary` sections without hidden Markdown comments, and multi-Mac `location_type` routing in `briefing watch`.
+- Current UX polish: centered `noted` end-of-meeting popup, menubar settings for model cache status / input microphone / auto-ingest, noted-owned model cache under Application Support, visible `## Meeting Summary` sections without hidden Markdown comments, and multi-Mac `location_type` routing in `briefing watch`.
 
 Next work:
 
