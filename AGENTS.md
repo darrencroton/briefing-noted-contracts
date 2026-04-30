@@ -1,1 +1,1 @@
-/Users/dcroton/Documents/AI Tools/private/briefing-noted-dev/AGENTS.md
+/Users/dcroton/Documents/AI Tools/private/briefing-noted/AGENTS.md
