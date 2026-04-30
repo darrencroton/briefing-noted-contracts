@@ -78,10 +78,6 @@ Contracts commits that are not tagged are not considered released. Never emit a 
 - Multi-Mac `meeting.location_type` routing is `briefing` policy. `noted` may carry the field through validation/logging, but it must not interpret it to make calendar or workflow decisions.
 - Raw audio is the primary asset and is preserved whenever capture succeeds (guardrail 10). The session-directory contract codifies this with the file-requirements table.
 
-## Phase 1 status
-
-v1.0.0 closes Phase 1 (Lock Contracts) of the master plan. All decisions in §27 that shape Phase 1 artefacts are recorded in the master plan itself and reflected here. Phase 2 work on `noted` may begin once this tag exists.
-
 ## Consuming project structure
 
 The broader project is three repositories living side-by-side:

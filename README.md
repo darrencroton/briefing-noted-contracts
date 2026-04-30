@@ -27,14 +27,9 @@ Read these before making architectural decisions:
 
 - `Meeting Intelligence System — Master Implementation Plan.md` — authoritative system design, schemas, CLI contract, phases, open questions (§27) with recorded decisions.
 - `Supplemental Implementation Guardrails.md` — 12 non-negotiable invariants, derivative of the master plan. In any conflict, the master plan wins.
-- `Meeting Intelligence System — Initial Action Plan.md` — step-by-step bring-up sequence (7 steps).
-- `Meeting Intelligence System — Post-Soak Action Plan.md` — one-week trial checklist, issue log, and deferred hardening queue.
-- `ASR Stack Recommendation — Swift vs Python.md` — recorded decision on ASR/diarization stack.
-- `AGENTS.md` — guidance for AI agents working in this repo (symlink to canonical external file).
+- `AGENTS.md` — guidance for AI agents working in this repo.
 
-## User walkthroughs
-
-- `Meeting Intelligence User Walkthroughs.md` - step-by-step setup and smoke workflows for installing `briefing` and `noted`, creating a scheduled test Calendar event, verifying automatic recording and popup behavior, and running an ad hoc recording.
+Earlier planning documents (`Initial Action Plan`, `ASR Stack Recommendation`) are preserved in `archive/`.
 
 ## `contracts/` — schemas, specs, and fixtures
 
@@ -52,7 +47,7 @@ Read these before making architectural decisions:
 
 ## Decisions already locked (apply when authoring `manifest.v1.json`)
 
-- `transcription.asr_backend` is an enum: **`"whisperkit"`** (default), `"fluidaudio-parakeet"`, `"sfspeech"`. Do **not** use `"faster-whisper"` or `"whisperx"` — the Swift stack was chosen on 2026-04-23. See `ASR Stack Recommendation — Swift vs Python.md` and Master Plan §15.2, §15.4, §27.9.
+- `transcription.asr_backend` is an enum: **`"fluidaudio-parakeet"`** (default), `"whisperkit"`, `"sfspeech"`. Do **not** use `"faster-whisper"` or `"whisperx"` — the Swift stack was chosen on 2026-04-23. See Master Plan §15.2, §15.4, §27.9.
 
 ## Non-negotiables
 
