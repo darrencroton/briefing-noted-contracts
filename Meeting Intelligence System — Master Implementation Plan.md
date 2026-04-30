@@ -239,6 +239,7 @@ The pre-roll window is a setting (`pre_roll_seconds`, default 90, range 60–180
 Clicking the `noted` menubar icon opens a small menu with these items:
 
 - **Start** — visible only when idle. Starts an ad hoc session (§20). Calendar-driven sessions are launched automatically by `briefing`, not from this menu.
+- **Pause / Continue** — visible only when a session is active. Pauses audio capture without ending the session; while paused the item changes to **Continue**. Applies equally to ad hoc and calendar-driven sessions.
 - **Stop** — visible only when a session is active. Equivalent to the popup’s **Stop** button.
 - **Status** — opens a small read-only panel showing session ID, elapsed time, current phase, and scheduled end.
 - **Settings** — opens the settings panel (§20.4 content).
@@ -452,6 +453,8 @@ The CLI must be small, stable, scriptable, deterministic, and machine-friendly. 
 
 ```
 noted start             --manifest <path>
+noted pause             --session-id <id>
+noted continue          --session-id <id>
 noted stop              --session-id <id>
 noted extend            --session-id <id> --minutes N
 noted switch-next       --session-id <id>
@@ -466,7 +469,6 @@ noted version
 noted wait              --session-id <id> [--timeout-seconds N]
 noted list-sessions
 noted tail-log          --session-id <id>
-noted resume            --session-id <id>
 ```
 
 ### 9.3 `start`
@@ -524,7 +526,31 @@ Post-processing runs in the background and proceeds through the phases listed in
 {"ok": true, "session_id": "2026-04-18-jayde-1600", "status": "processing", "audio_finalised": true}
 ```
 
-### 9.4.1 `wait` (optional)
+### 9.4.1 `pause` and `continue`
+
+**Commands:**
+
+```
+noted pause --session-id <id>
+noted continue --session-id <id>
+```
+
+**Behaviour:** Temporarily suspends or resumes audio capture for an active session without changing the manifest, scheduled end time, stop reason, or session identity. The session remains in `status: "recording"` and reports `is_paused: true` while paused, avoiding a new locked runtime status value.
+
+|Code|Meaning                              |
+|----|-------------------------------------|
+|0   |Pause/continue state applied         |
+|2   |Unknown session ID                   |
+|3   |Session not in `recording`           |
+|4   |Pause/continue request failed/timed out|
+
+**Stdout:**
+
+```json
+{"ok": true, "session_id": "2026-04-18-jayde-1600", "status": "recording", "is_paused": true}
+```
+
+### 9.4.2 `wait` (optional)
 
 For tests or deterministic ingest paths, a `wait` command blocks until a session is fully processed:
 
@@ -540,7 +566,7 @@ For tests or deterministic ingest paths, a `wait` command blocks until a session
 
 This is optional in v1; file-watching `completion.json` is the normal path.
 
-### 9.4.2 Concurrency
+### 9.4.3 Concurrency
 
 `noted` permits at most **one active capture** at a time (exit code 5 from `start`). However, post-processing of a just-stopped session may overlap with capture of the next session. This is the mechanism that makes back-to-back meetings possible: while session B captures, session A’s ASR and diarization run in the background. Resource contention is expected to be modest for typical meeting lengths on a current-generation MacBook Pro; Phase 5 may revisit if it becomes an issue.
 
@@ -563,6 +589,7 @@ This is optional in v1; file-watching `completion.json` is the normal path.
   "session_id": "2026-04-18-jayde-1600",
   "status": "recording",
   "phase": "capturing",
+  "is_paused": false,
   "started_at": "2026-04-18T16:00:03+10:00",
   "scheduled_end_time": "2026-04-18T17:00:00+10:00",
   "current_extension_minutes": 0,
