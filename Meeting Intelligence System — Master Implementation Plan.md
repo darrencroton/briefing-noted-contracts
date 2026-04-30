@@ -206,7 +206,7 @@ No shared in-memory state. No shared library. No inter-process direct IPC in v1.
 2. `briefing` detects the event and invokes `noted start` during a **pre-roll window** before `start_time` (see §6.1.1) so that capture is already stable by the time the meeting begins.
 3. `noted` plays a short bell at the moment actual capture begins and sets the menubar icon to “recording”.
 4. The meeting proceeds. `noted` captures audio continuously, maintains runtime state, and is otherwise silent.
-5. At `scheduled_end − 5 minutes`, `noted` plays a beep and shows a popup with **Stop**, **+5 minutes**, and (if a next meeting exists) **Next Meeting**.
+5. At `scheduled_end − pre_end_prompt_minutes`, `noted` plays a beep and shows a popup with **Stop**, **+N minutes**, and (if a next meeting exists) **Next Meeting**.
 6. The user either clicks a button or does nothing. Default behaviour is covered in §12.
 7. When the session stops, `noted` finalises audio promptly and returns. ASR and diarization run asynchronously in the background. `completion.json` is written when post-processing finishes.
 8. `briefing` ingests the completed session, runs summarisation, and writes the summary into the Obsidian meeting note.
@@ -229,7 +229,7 @@ The pre-roll window is a setting (`pre_roll_seconds`, default 90, range 60–180
 - **Calendar:** the event they already had.
 - **Menubar:** an icon whose state reflects idle / recording / processing.
 - **Popup:** at most once per meeting, five minutes before the scheduled end.
-- **Obsidian note:** the same note that already contains their `## Briefing` block, now additionally containing a managed `## Summary` block.
+- **Obsidian note:** the same note that already contains their `## Briefing` block, now additionally containing a managed `## Meeting Summary` block.
 
 ### 6.3 What the User Does *Not* Do
 
@@ -384,8 +384,8 @@ The manifest is the single handoff object describing one meeting instance. `brie
   "recording_policy": {
     "auto_start": true,
     "auto_stop": true,
-    "default_extension_minutes": 5,
-    "max_single_extension_minutes": 5,
+    "default_extension_minutes": 10,
+    "max_single_extension_minutes": 15,
     "pre_end_prompt_minutes": 5,
     "no_interaction_grace_minutes": 5
   },
@@ -398,13 +398,14 @@ The manifest is the single handoff object describing one meeting instance. `brie
   },
   "paths": {
     "session_dir": "/path/to/sessions/2026-04-18-jayde-1600",
-    "output_dir": "/path/to/sessions/2026-04-18-jayde-1600",
+    "output_dir": "/path/to/sessions/2026-04-18-jayde-1600/outputs",
     "note_path": "/path/to/obsidian/Meetings/Jayde/2026-04-18 Jayde 4-5pm.md"
   },
   "transcription": {
     "asr_backend": "whisperkit",
     "diarization_enabled": true,
-    "speaker_count_hint": 3
+    "speaker_count_hint": 3,
+    "language": "en-AU"
   },
   "hooks": {
     "completion_callback": null
@@ -435,7 +436,7 @@ The manifest is the single handoff object describing one meeting instance. `brie
 - `mode.audio_strategy` (if absent, `noted` derives it from `mode.type` per §14.1)
 - `participants.attendees_expected`, `participants.participant_names`
 - `next_meeting.event_id`, `next_meeting.title`, `next_meeting.start_time`, `next_meeting.manifest_path`
-- `transcription.speaker_count_hint` (derived from `attendees` if not set — see §7.3 and §8.5), `transcription.language` (BCP-47, e.g. `en-AU`; defaults to `noted`’s configured language)
+- `transcription.speaker_count_hint` (derived from `attendees` if not set — see §7.3 and §8.5), `transcription.language` (BCP-47, e.g. `en-AU`; `briefing` writes its configured default for calendar sessions, and `noted` falls back to its own setting only if absent)
 
 **Reserved (present in v1.0 for forward compatibility; not yet consumed):**
 
@@ -635,7 +636,7 @@ This is optional in v1; file-watching `completion.json` is the normal path.
 
 ### 9.7 `extend` and `switch-next` (popup-driven actions)
 
-The end-of-meeting popup’s **+5 minutes** and **Next Meeting** buttons are implemented by `noted`’s internal runtime. For scriptability and parity with the popup, they are also exposed as CLI commands.
+The end-of-meeting popup’s **+N minutes** and **Next Meeting** buttons are implemented by `noted`’s internal runtime. For scriptability and parity with the popup, they are also exposed as CLI commands.
 
 **`noted extend --session-id <id> --minutes N`**
 
@@ -809,7 +810,7 @@ At `scheduled_end_time − pre_end_prompt_minutes`, `noted` must:
 - Play a beep (distinct from the recording-start bell).
 - Show a popup with:
   - **Stop**
-  - **+5 minutes**
+  - **+N minutes**, where `N` is `default_extension_minutes`
   - **Next Meeting** *(only if `next_meeting.exists == true`)*
 
 ### 12.2 User Actions
@@ -817,7 +818,7 @@ At `scheduled_end_time − pre_end_prompt_minutes`, `noted` must:
 |Action                |Behaviour                                                               |
 |----------------------|------------------------------------------------------------------------|
 |Click **Stop**        |Stop current session immediately                                        |
-|Click **+5 minutes**  |Extend stop deadline by `default_extension_minutes`                     |
+|Click **+N minutes**  |Extend stop deadline by `default_extension_minutes`                     |
 |Click **Next Meeting**|Stop current session; launch next session from the pre-prepared manifest|
 
 ### 12.3 No-Interaction Rules
@@ -831,7 +832,7 @@ At `scheduled_end_time − pre_end_prompt_minutes`, `noted` must:
 
 Per §27.12 decision (c), a user may keep extending a session as many times as they want. Each extension adds `default_extension_minutes` to the current scheduled stop.
 
-After the first **+5 minutes** press, the full end-of-meeting popup (Stop / +5 / Next Meeting) is replaced for subsequent extensions by a simpler follow-up notification with a single **Still going** action that grants another `default_extension_minutes`. Each follow-up notification fires at the new `scheduled_end_time − pre_end_prompt_minutes` (or immediately before the new stop deadline, whichever is sooner) and is dismissible by doing nothing, in which case the no-interaction rules in §12.3 apply against the new stop deadline.
+After the first **+N minutes** press, the full end-of-meeting popup (Stop / +N / Next Meeting) is replaced for subsequent extensions by a simpler follow-up notification with a single **Still going** action that grants another `default_extension_minutes`. Each follow-up notification fires at the new `scheduled_end_time − pre_end_prompt_minutes` (or immediately before the new stop deadline, whichever is sooner) and is dismissible by doing nothing, in which case the no-interaction rules in §12.3 apply against the new stop deadline.
 
 Notes:
 
@@ -934,7 +935,7 @@ ASR is run in a single target language per session. The language is resolved, in
 2. `noted`’s configured default language.
 3. Automatic detection as a last resort (not recommended — slower and less accurate).
 
-For the primary use case this defaults to `en-AU` in `noted` settings.
+For `briefing`-generated calendar sessions this defaults to `en-AU` through `briefing` settings. For ad hoc sessions, `noted` uses its local settings default unless the user changes it.
 
 ### 15.4 Diarization
 
@@ -1059,7 +1060,7 @@ This plan *extends* `briefing`; it does not duplicate it. Dev team familiarity w
   - `briefing session-plan --event-id <id>` — generate a manifest for a single detected event, with `next_meeting` lookahead. Used by `briefing watch` during planning and during invalidation sweeps.
   - `briefing session-ingest --session-dir <path>` — consume a completed `noted` session (reads `completion.json` + transcript) and write the summary into the Obsidian note. Invoked by `noted` when post-processing finishes, per §27.6.
   - `briefing session-reprocess --session-dir <path>` — rerun summarisation on an existing transcript. Essential for the retain-raw-audio recovery story.
-- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `location_type`, `mode`, `attendees_expected`, `participant_names`, `speaker_count_hint`, and the `transcription` block (ASR backend, model size, language, diarization on/off). These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
+- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `location_type`, `mode`, `audio_strategy`, `host_name`, `attendees_expected`, `participant_names`, `speaker_count_hint`, `note_dir`, `note_slug`, `language`, `asr_backend`, `diarization_enabled`, and the `recording_policy` block. These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
 - Multi-Mac recording-location routing in `briefing`: a global default target `location_type`, an optional local `location_type`, and an optional host-name mapping based on macOS `HostName`, `LocalHostName`, and `ComputerName`. Routing affects eligibility before manifest writing or launch; `noted` does not participate in this decision.
 - A trigger mechanism — how `briefing` is invoked near the start of a meeting rather than on a fixed launchd schedule. See §27.1. Whichever trigger model is chosen, `briefing` at pre-roll time invokes `noted start --manifest <path>` directly; there is no `briefing session-start` wrapper.
 - A manifest-invalidation sweep in `briefing watch` (§13.3) so pre-prepared next-meeting manifests reflect current calendar state.
@@ -1136,7 +1137,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
   "created_at": "2026-04-18T15:45:00+10:00",
   "meeting": {
     "event_id": null,
-    "title": "Ad hoc recording",
+    "title": "Ad hoc session",
     "start_time": "2026-04-18T15:45:00+10:00",
     "scheduled_end_time": null,
     "timezone": "Australia/Melbourne"
@@ -1144,7 +1145,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
   "mode": {"type": "in_person", "audio_strategy": "room_mic"},
   "participants": {"host_name": "Darren", "names_are_hints_only": true},
   "recording_policy": {
-    "auto_start": false,
+    "auto_start": true,
     "auto_stop": false,
     "default_extension_minutes": 5,
     "pre_end_prompt_minutes": 5,
@@ -1152,11 +1153,11 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
   },
   "next_meeting": {"exists": false},
   "paths": {
-    "session_dir": "/path/to/sessions/adhoc-2026-04-18-154500",
-    "output_dir": "/path/to/sessions/adhoc-2026-04-18-154500",
-    "note_path": "/path/to/obsidian/Meetings/Adhoc/2026-04-18 Ad hoc recording.md"
+    "session_dir": "/path/to/noted-output/adhoc-2026-04-18-154500",
+    "output_dir": "/path/to/noted-output/adhoc-2026-04-18-154500/outputs",
+    "note_path": "/path/to/noted-output/adhoc-2026-04-18-154500.md"
   },
-  "transcription": {"asr_backend": "whisperkit", "diarization_enabled": true}
+  "transcription": {"asr_backend": "whisperkit", "diarization_enabled": true, "language": "en-AU"}
 }
 ```
 
@@ -1270,7 +1271,7 @@ Each phase has a success criterion that must be demonstrable before moving on.
 ### Phase 3 — End-of-Meeting UX
 
 - Beep + popup at `T − pre_end_prompt_minutes`.
-- Stop / +5 / Next Meeting buttons wired to the `stop` / `extend` / `switch-next` CLI paths.
+- Stop / +N / Next Meeting buttons wired to the `stop` / `extend` / `switch-next` CLI paths.
 - Auto-stop and auto-switch per §12.3.
 - Runtime state file reflects all transitions.
 
@@ -1408,7 +1409,7 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 |§27.9 Diarization library                   |2 (resolved — FluidAudio)|
 |§27.10 Retention policy                     |5           |
 |§27.11 Audio device selection hint          |2           |
-|§27.12 Extension policy beyond one +5       |3           |
+|§27.12 Extension policy beyond one extension|3           |
 |§27.13 Multi-Mac recording location routing |4           |
 
 **Minimum decisions needed before Phase 2 can begin:** §27.9, §27.11.
@@ -1482,8 +1483,8 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 **Options:**
 
-- **(a) New `## Summary` block between `## Briefing` and `## Meeting Notes`** — pre-briefing up top, then summary, then user notes. Read top-to-bottom reflects the meeting lifecycle.
-- **(b) New `## Summary` block appended after the user’s `## Meeting Notes` section** — user notes remain the first thing read; summary is additive.
+- **(a) New `## Meeting Summary` block between `## Briefing` and `## Meeting Notes`** — pre-briefing up top, then summary, then user notes. Read top-to-bottom reflects the meeting lifecycle.
+- **(b) New `## Meeting Summary` block appended after the user’s `## Meeting Notes` section** — user notes remain the first thing read; summary is additive.
 - **(c) A separate file** — e.g., `2026-04-18 Jayde 4-5pm (summary).md` — avoids touching the existing note at all.
 
 **Recommendation:** **(a)**. It preserves the one-note-per-meeting model, puts machine-generated content in a predictable location, and keeps the user’s notes as the final, owned section. Downstream carry-forward behaviour is unchanged because only content from `## Meeting Notes` onward feeds prior-context lookups.
@@ -1530,15 +1531,15 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 **Options:**
 
-- **(a)** Same as `default_extension_minutes` (5 min) — one knob, consistent.
+- **(a)** Fixed 5 min — consistent with `noted`'s ad hoc extension default, while allowing `briefing` calendar manifests to choose a different extension length.
 - **(b)** Shorter (e.g., 2 min) — faster handoff, less overrun.
 - **(c)** Longer (e.g., 10 min) — more forgiving.
 
-**Recommendation:** **(a) = 5 min.** Simpler mental model for the user.
+**Recommendation:** **(a) = 5 min.** Keep the no-interaction grace independently configurable so changing extension length does not silently change handoff timing.
 
 **Blocks:** §8.2 schema, §12.3 behaviour.
 
-**Decision:** (a) as recommended.
+**Decision:** (a) as recommended. The implemented defaults are `no_interaction_grace_minutes = 5`, `pre_end_prompt_minutes = 5`, `default_extension_minutes = 10` for `briefing` calendar manifests, and `default_extension_minutes = 5` for `noted` ad hoc manifests.
 
 ### 27.8 macOS System-Audio Capture Mechanism (for `online` mode)
 
@@ -1605,17 +1606,17 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 **Decision:** (a) as recommended.
 
-### 27.12 Extension Policy — Beyond One +5
+### 27.12 Extension Policy — Beyond One Extension
 
-**Context:** The original v1 rule (as drafted) would have locked the popup to a single `+5 minutes` action, which does not serve long meetings with one legitimate overrun. §12.4 has been updated to reflect the decision below.
+**Context:** The original v1 rule (as drafted) would have locked the popup to a single extension action, which does not serve long meetings with one legitimate overrun. §12.4 has been updated to reflect the decision below.
 
 **Options:**
 
-- **(a)** Single +5 only (current v1 rule).
+- **(a)** Single extension only.
 - **(b)** Allow up to N extensions (e.g., N=3), re-prompt at each extension deadline.
-- **(c)** After the first +5, show a simpler notification with a single “Still going” option that grants another 5 min.
+- **(c)** After the first extension, show a simpler notification with a single “Still going” option that grants another `default_extension_minutes`.
 
-**Recommendation:** Ship **(a)** in v1; revisit after two weeks of real usage.
+**Recommendation:** Ship **(c)** so the user can keep extending without re-exposing the next-meeting handoff.
 
 **Blocks:** Phase 3.
 
