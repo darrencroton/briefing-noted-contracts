@@ -95,6 +95,10 @@ Keeping these separate avoids duplicating calendar logic, prevents the runtime a
 
 > *As a host who doesn’t want false attributions, I would rather have a summary that says “a participant raised a concern about X” than one that confidently names the wrong person.*
 
+### 2.7 Multi-Mac location routing
+
+> *As a user with an office Mac and a home Mac both running `briefing` and `noted`, I want recordings to start only on the Mac at the meeting’s intended location, with a calendar-note override for one-off location changes, so a work-from-home day records on the home Mac instead of an empty office.*
+
 -----
 
 ## 3. Goals & Non-Goals
@@ -113,7 +117,7 @@ Keeping these separate avoids duplicating calendar logic, prevents the runtime a
 - Real-time live transcription during the meeting.
 - A transcript reader / editor UI.
 - Speaker enrolment / voice profiles.
-- Multi-device / multi-host synchronisation.
+- Multi-device / multi-host state synchronisation. v1 supports simple local location routing for multiple independently-running Macs; it does not coordinate locks or share live state between them.
 - Cloud storage of audio or transcripts.
 - A full task-management layer — action items are emitted into the note; follow-through is the user’s.
 
@@ -272,6 +276,7 @@ Calendar event notes are the per-event override mechanism and the entry point fo
 
 ```
 noted config
+location_type: office | home | seminar_room
 mode: in_person | online | hybrid
 attendees: <integer>
 participants: Name 1, Name 2, Name 3
@@ -285,7 +290,6 @@ If `speaker_count_hint` is not set explicitly, `briefing` derives it from `atten
 
 ```
 audio_app_bundle_id: us.zoom.xos
-location_type: office | home | seminar_room
 ```
 
 ### 7.3 Parsing Rules
@@ -295,6 +299,7 @@ location_type: office | home | seminar_room
 - Malformed values produce a warning and a sane default; the workflow continues.
 - If `attendees` and the length of `participants` disagree, both are preserved and a warning is logged. `participants` is a hint, not a count.
 - `record: false` suppresses recording even if the event matches an active series.
+- `location_type` is a routing label for the Mac that should execute the recording (`office`, `home`, etc.). It is not parsed from the free-form calendar location string. For multi-Mac setups, `briefing` compares the resolved target `location_type` against the local Mac’s configured location and skips non-matches before writing or launching a manifest.
 - **Precedence.** For series-matched events, metadata is resolved in the following order, highest priority first: (1) calendar-note values, (2) series YAML defaults, (3) `briefing` global defaults, (4) hard-coded defaults. A calendar-note value always wins over a series YAML default for the same field.
 - **`speaker_count_hint` fallback.** If `speaker_count_hint` is not provided by either the calendar notes or the series YAML, `briefing` derives it in order: (1) `attendees`, (2) length of `participants`, (3) unset. This fallback is performed at manifest-assembly time in `briefing`; see §8.5.
 
@@ -318,6 +323,7 @@ How this marker interacts with `briefing`’s existing series YAML configuration
 
 ```
 noted config
+location_type: office
 mode: in_person
 attendees: 3
 participants: Jayde, Ivo
@@ -331,6 +337,13 @@ record: true
 ```
 noted config
 record: false
+```
+
+**Series-matched event moved to another Mac/location for one instance.** Calendar notes override the series/default target location; the Mac whose local `location_type` is `home` plans and launches this recording, while the office Mac skips or invalidates its unlaunched plan.
+
+```
+noted config
+location_type: home
 ```
 
 -----
@@ -355,7 +368,8 @@ The manifest is the single handoff object describing one meeting instance. `brie
     "start_time": "2026-04-18T16:00:00+10:00",
     "scheduled_end_time": "2026-04-18T17:00:00+10:00",
     "timezone": "Australia/Melbourne",
-    "location": "Office 3.21"
+    "location": "Office 3.21",
+    "location_type": "office"
   },
   "mode": {
     "type": "in_person",
@@ -417,6 +431,7 @@ The manifest is the single handoff object describing one meeting instance. `brie
 
 - `meeting.series_id` (absent for ad hoc sessions)
 - `meeting.location`
+- `meeting.location_type`
 - `mode.audio_strategy` (if absent, `noted` derives it from `mode.type` per §14.1)
 - `participants.attendees_expected`, `participants.participant_names`
 - `next_meeting.event_id`, `next_meeting.title`, `next_meeting.start_time`, `next_meeting.manifest_path`
@@ -858,15 +873,16 @@ This preserves the source-of-truth rules in §5.3: `briefing` remains the only c
 Because next-meeting manifests are written in advance, the calendar state at the moment of handoff may differ from the state at planning time (e.g., meeting B is cancelled or rescheduled while meeting A is happening). `briefing watch` is responsible for keeping pre-prepared manifests honest:
 
 - On each tick, `briefing watch` checks pre-prepared next-manifests against current calendar state.
-- If the corresponding event is cancelled, `briefing watch` **deletes** the pre-prepared manifest file and updates the current session’s `next_meeting.exists` in its own tracking; the running `noted` session will notice the missing manifest path on a switch attempt and degrade gracefully.
+- If the corresponding event is cancelled, `briefing watch` archives the pre-prepared manifest file and updates the current session’s `next_meeting.exists` in its own tracking; the running `noted` session will notice the missing manifest path on a switch attempt and degrade gracefully.
 - If the event is rescheduled within tolerance, `briefing watch` rewrites the manifest in place.
-- If the event is moved outside tolerance, the manifest is deleted.
+- If the event is moved outside tolerance, the manifest is archived.
+- If the event's resolved recording `location_type` changes so it no longer belongs on this Mac, `briefing watch` archives the unlaunched manifest and clears any `next_meeting` references to it.
 
-If `noted switch-next` attempts to launch a manifest that has been deleted, it logs a warning, writes a completion file for the current session with `stop_reason: auto_switch_to_next_meeting` and a `next_manifest_missing` warning, and returns to `idle`. The user sees the menubar return to neutral; no new session starts. In the worst case where invalidation races the switch, `noted` launches on a stale manifest and records a few minutes of an empty room — not a disaster, and the summarisation step will reflect that.
+If `noted switch-next` attempts to launch a manifest that has been archived away from its original path, it logs a warning, writes a completion file for the current session with `stop_reason: auto_switch_to_next_meeting` and a `next_manifest_missing` warning, and returns to `idle`. The user sees the menubar return to neutral; no new session starts. In the worst case where invalidation races the switch, `noted` launches on a stale manifest and records a few minutes of an empty room — not a disaster, and the summarisation step will reflect that.
 
 ### 13.4 Eligibility
 
-`briefing` decides what “eligible next meeting” means: typically a meeting that starts within 15 minutes of the current scheduled end, has `record: true` (or is otherwise configured for recording), and does not overlap the current session by more than a small tolerance. Exact rules are `briefing`’s concern.
+`briefing` decides what “eligible next meeting” means: typically a meeting that starts within 15 minutes of the current scheduled end, has `record: true` (or is otherwise configured for recording), matches this Mac's resolved `location_type` when routing is configured, and does not overlap the current session by more than a small tolerance. Exact rules are `briefing`’s concern.
 
 -----
 
@@ -1043,7 +1059,8 @@ This plan *extends* `briefing`; it does not duplicate it. Dev team familiarity w
   - `briefing session-plan --event-id <id>` — generate a manifest for a single detected event, with `next_meeting` lookahead. Used by `briefing watch` during planning and during invalidation sweeps.
   - `briefing session-ingest --session-dir <path>` — consume a completed `noted` session (reads `completion.json` + transcript) and write the summary into the Obsidian note. Invoked by `noted` when post-processing finishes, per §27.6.
   - `briefing session-reprocess --session-dir <path>` — rerun summarisation on an existing transcript. Essential for the retain-raw-audio recovery story.
-- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `mode`, `attendees_expected`, `participant_names`, `speaker_count_hint`, and the `transcription` block (ASR backend, model size, language, diarization on/off). These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
+- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `location_type`, `mode`, `attendees_expected`, `participant_names`, `speaker_count_hint`, and the `transcription` block (ASR backend, model size, language, diarization on/off). These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
+- Multi-Mac recording-location routing in `briefing`: a global default target `location_type`, an optional local `location_type`, and an optional host-name mapping based on macOS `HostName`, `LocalHostName`, and `ComputerName`. Routing affects eligibility before manifest writing or launch; `noted` does not participate in this decision.
 - A trigger mechanism — how `briefing` is invoked near the start of a meeting rather than on a fixed launchd schedule. See §27.1. Whichever trigger model is chosen, `briefing` at pre-roll time invokes `noted start --manifest <path>` directly; there is no `briefing session-start` wrapper.
 - A manifest-invalidation sweep in `briefing watch` (§13.3) so pre-prepared next-meeting manifests reflect current calendar state.
 
@@ -1392,10 +1409,11 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 |§27.10 Retention policy                     |5           |
 |§27.11 Audio device selection hint          |2           |
 |§27.12 Extension policy beyond one +5       |3           |
+|§27.13 Multi-Mac recording location routing |4           |
 
 **Minimum decisions needed before Phase 2 can begin:** §27.9, §27.11.
 **Before Phase 3:** §27.7, §27.12.
-**Before Phase 4:** §27.1, §27.2, §27.3, §27.4, §27.5, §27.6.
+**Before Phase 4:** §27.1, §27.2, §27.3, §27.4, §27.5, §27.6, §27.13.
 **Before Phase 5:** §27.8, §27.10.
 
 ### 27.1 `briefing` Lifecycle Model
@@ -1603,6 +1621,22 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 **Decision:** (c) let the user keep extending if they want.
 
+### 27.13 Multi-Mac Recording Location Routing
+
+**Context:** A user may run `briefing watch` and `noted` on more than one Mac, for example one Mac in the office and one at home. Without routing, both machines can see the same calendar event and the wrong machine may start recording an empty room.
+
+**Options:**
+
+- **(a) Per-machine enable/disable only** — manually pause scheduled recordings on the Mac that is not in use. Simple but easy to forget.
+- **(b) Calendar location string heuristics** — infer office/home from the free-form calendar `location`. Fragile and mixes room labels, video URLs, and routing policy.
+- **(c) Explicit `location_type` routing in `briefing`** — resolve a target label from calendar notes > series YAML > global defaults, resolve this Mac's local label from settings or macOS HostName/LocalHostName/ComputerName mapping, and skip non-matches before writing or launching manifests.
+
+**Recommendation:** **(c)**. It is explicit, inspectable, keeps all calendar interpretation in `briefing`, and does not require cross-machine locking or any new responsibility in `noted`.
+
+**Blocks:** §7, §13.3, §18.2, Phase 4.
+
+**Decision:** (c) as recommended. This is routing, not synchronisation: each Mac independently evaluates the same calendar event using the same precedence rules, and only the matching location plans or launches. If a calendar-note override changes an unlaunched event to another `location_type`, `briefing watch` archives the stale local manifest and clears any current-session `next_meeting` pointer to it.
+
 -----
 
 ## 28. Glossary
@@ -1619,6 +1653,7 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 - **Source adapter** — `briefing`’s existing pluggable interface for supplying context to an LLM prompt (`previous_note`, `slack`, `notion`, `file`; proposed new `transcript`).
 - **`noted config` marker** — a plain-text marker (and optional metadata block) in a calendar event’s notes that opts a one-off event into the recording workflow and/or overrides series-YAML defaults on a per-instance basis. See §7.
 - **Metadata precedence** — the order in which `briefing` resolves a manifest field for a series-matched event: calendar-note value > series YAML default > `briefing` global default > hard-coded default. See §7.3.
+- **`location_type`** — an explicit routing label such as `office` or `home` that tells `briefing` which Mac should plan and launch a recording. It is separate from the free-form calendar `location` string.
 
 -----
 

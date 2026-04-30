@@ -247,7 +247,7 @@ This directly impacts:
 
 - `briefing` decides next meeting eligibility
 - `briefing` prepares next manifest in advance
-- `briefing watch` keeps pre-prepared manifests current with the calendar (deletes on cancellation, rewrites on reschedule)
+- `briefing watch` keeps pre-prepared manifests current with the calendar (archives on cancellation, rewrites on reschedule)
 - `noted` only:
   - reads `next_meeting` from the current manifest
   - displays the option in the popup
@@ -385,6 +385,33 @@ A subtle bug here — a greedy regex, a slip in delimiter detection, a merge whe
 Every change to the note-writing code path should be reviewed against this rule specifically. Every test harness should include a note with rich user content in the user section and assert that content is byte-identical after rewrites.
 
 Managed content is replaceable. User content is not.
+
+-----
+
+# 13. Recording Location Routing Belongs in `briefing`
+
+## Rule
+
+When multiple Macs run `briefing watch`, the decision about which Mac should record a calendar event is still calendar interpretation and workflow policy. It belongs only in `briefing`.
+
+## Required Behaviour
+
+`briefing` may:
+
+- resolve a target `location_type` from calendar-note overrides, series YAML, and global defaults
+- resolve this Mac's local `location_type` from local settings or macOS machine-name mapping
+- skip or invalidate unlaunched manifests whose target location does not match this Mac
+
+`noted` must not:
+
+- read calendar notes to decide location
+- inspect host names for workflow routing
+- coordinate with another Mac
+- override a manifest because it thinks it is on the wrong machine
+
+## Why This Matters
+
+Multi-Mac setups are a deployment detail of the orchestration layer. Keeping the routing decision in `briefing` preserves the single-brain architecture and avoids turning `noted` into a second policy engine.
 
 -----
 

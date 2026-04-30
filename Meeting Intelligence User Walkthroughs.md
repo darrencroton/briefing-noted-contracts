@@ -135,6 +135,8 @@ transcription:
 
 This makes the event eligible for recording. It keeps the timing defaults from `briefing` and `noted`, including the end-of-meeting popup.
 
+If you run `briefing watch` on more than one Mac, also configure `location_type` routing in `briefing/user_config/settings.toml` before this walkthrough. For a one-off test that should run from the current Mac, add a matching line under `noted config`, for example `location_type: office` or `location_type: home`.
+
 ## User Story 1: First-Time Local Setup
 
 Follow [Setup](#setup), then confirm:
@@ -321,6 +323,7 @@ Check:
 - `noted` is running in the menubar
 - `uv run briefing watch` is still running
 - the event notes contain the `noted config` block
+- if multi-Mac routing is configured, the event or default `location_type` matches this Mac
 - the event has not already started
 - `noted` is available on `PATH`
 
