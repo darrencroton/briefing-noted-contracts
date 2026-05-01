@@ -306,6 +306,7 @@ Raw audio must be preserved whenever capture succeeds.
 - store raw audio before processing
 - do not delete on failure
 - allow future reprocessing via `briefing session-reprocess`
+- preserve raw audio until the configured retention policy expires
 
 ## Why This Matters
 

@@ -1233,7 +1233,7 @@ In jurisdictions requiring all-party consent, verbal disclosure remains the user
 
 ### 22.5 Retention
 
-Raw audio, transcripts, and the session directory are retained per a retention policy that is still to be finalised (§27.10). Until finalised, the default is “retain indefinitely, rely on user to prune” — which is safe for recovery but not for privacy hygiene over time.
+Raw audio is retained under the configured rolling retention window (§27.10): default 7 days after `completion.json.completed_at`, then raw audio files are moved to the system Trash. Transcripts, summaries, logs, manifests, and `completion.json` remain in the session directory. FLAC compression remains a later enhancement.
 
 ### 22.6 API Keys & Secrets
 
@@ -1584,11 +1584,11 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 - **(c) Manual** — never auto-delete; user prunes.
 - **(d) Compress to FLAC** — reduces size by ~50 % without loss; combine with (a) or (b).
 
-**Recommendation:** **(a) + (d)**. Keep 30 days, store as FLAC. Balances recovery value with privacy hygiene and disk usage.
+**Recommendation:** **(a) + (d)**. Keep raw audio for a configurable rolling window, store as FLAC when compression lands. Balances recovery value with privacy hygiene and disk usage.
 
 **Blocks:** §22.5, Phase 5.
 
-**Decision:** **(a) + (d)** as recommended.
+**Decision:** **(a) now, (d) later.** `briefing` owns retention enforcement. Default window is 7 days from `completion.json.completed_at`; expired raw audio is moved to the system Trash, not permanently deleted. FLAC compression is deferred until after retention is in place.
 
 ### 27.11 Audio Device Selection Hint for `in_person`
 
