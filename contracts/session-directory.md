@@ -46,10 +46,11 @@ The contract is not that every file always exists — it is that when a given co
 
 Notes:
 
-- `manifest.json` is a direct copy (or serialisation) of the manifest that was passed to `noted start` — never rewritten during the session.
+- `manifest.json` starts as a direct copy (or serialisation) of the manifest that was passed to `noted start`. While the session is active, `briefing watch` may refresh `next_meeting` in place when it discovers or invalidates the following meeting; `noted` re-reads `manifest.json` at end-of-meeting popup display time and uses the latest valid `next_meeting` value.
 - `runtime/status.json` is rewritten on every state or phase transition (§10.3).
 - `runtime/ui_state.json` is ephemeral UI state (popup history, button presses, icon state). `briefing` does not read it; it may be deleted without loss of session integrity (§10.4).
 - `outputs/completion.json` is the only authoritative record of session outcome (guardrail 3). `briefing` reads it first; it must never be inferred from file presence or log parsing.
+- Normally `noted` writes `outputs/completion.json` after post-processing. If a planned launch is blocked until the meeting window closes and `noted` never starts the session, `briefing watch` writes a failed `startup_failure` completion so the missed session still has a terminal artifact.
 
 ## Transcript outputs
 

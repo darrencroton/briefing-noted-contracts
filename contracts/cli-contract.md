@@ -129,7 +129,7 @@ Extends the scheduled stop by N minutes (typically 5). Idempotent within a singl
 
 ## `noted switch-next --session-id <id>`
 
-Stops the current capture immediately (same fast-stop as `stop`), writes `stop_reason: auto_switch_to_next_meeting`, and launches the next session by invoking `noted start --manifest <next_manifest_path>` on the pre-prepared manifest referenced by `next_meeting.manifest_path` in the current manifest. Returns as soon as the current capture is finalised and the next-session launch has either succeeded or failed. Post-processing of the old session and startup of the new session proceed concurrently.
+Stops the current capture immediately (same fast-stop as `stop`), writes `stop_reason: auto_switch_to_next_meeting`, and launches the next session by invoking `noted start --manifest <next_manifest_path>` on the pre-prepared manifest referenced by `next_meeting.manifest_path` in the current manifest. `noted` reads the current session's `manifest.json` when `switch-next` runs, so it observes any in-place `next_meeting` refresh written by `briefing watch` after session start. Returns as soon as the current capture is finalised and the next-session launch has either succeeded or failed. Post-processing of the old session and startup of the new session proceed concurrently.
 
 | Code | Meaning |
 |------|---------|
