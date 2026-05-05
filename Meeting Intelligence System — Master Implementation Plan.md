@@ -832,12 +832,12 @@ At `scheduled_end_time − pre_end_prompt_minutes`, `noted` must:
 
 Per §27.12 decision (c), a user may keep extending a session as many times as they want. Each extension adds `default_extension_minutes` to the current scheduled stop.
 
-After the first **+N minutes** press, the full end-of-meeting popup (Stop / +N / Next Meeting) is replaced for subsequent extensions by a simpler follow-up notification with a single **Still going** action that grants another `default_extension_minutes`. Each follow-up notification fires at the new `scheduled_end_time − pre_end_prompt_minutes` (or immediately before the new stop deadline, whichever is sooner) and is dismissible by doing nothing, in which case the no-interaction rules in §12.3 apply against the new stop deadline.
+After the first **+N minutes** press, subsequent follow-up prompts reuse the same end-of-meeting popup wording and action set: **Stop**, **+N minutes**, and **Next Meeting** whenever `next_meeting.exists == true`. Each follow-up prompt fires at the new `scheduled_end_time − pre_end_prompt_minutes` (or immediately before the new stop deadline, whichever is sooner) and is dismissible by doing nothing, in which case the no-interaction rules in §12.3 apply against the new stop deadline.
 
 Notes:
 
 - Each extension writes an updated `scheduled_end_time` to `runtime/status.json` and increments `current_extension_minutes` by `default_extension_minutes`.
-- The **Next Meeting** action is never re-offered in the simpler follow-up notification. If a next meeting existed at the original popup, the user has already seen it; if they chose to extend instead, the next meeting's popup-level handoff is effectively forfeited. `briefing watch` will have invalidated or updated the pre-prepared next manifest by then anyway.
+- The **Next Meeting** action is offered on every prompt cycle when the current session manifest says `next_meeting.exists == true`. `noted` re-reads the manifest at popup display time, so `briefing watch` remains responsible for invalidating or updating the pre-prepared next manifest while the current meeting is running.
 - `max_single_extension_minutes` in the manifest schema is reserved but not consumed by this policy; see §8.3.
 
 ### 12.5 Ownership
@@ -1614,9 +1614,9 @@ Every manifest and every completion file includes `schema_version` as `<major>.<
 
 - **(a)** Single extension only.
 - **(b)** Allow up to N extensions (e.g., N=3), re-prompt at each extension deadline.
-- **(c)** After the first extension, show a simpler notification with a single “Still going” option that grants another `default_extension_minutes`.
+- **(c)** After each extension, re-show the same end-of-meeting action set and allow another `default_extension_minutes`.
 
-**Recommendation:** Ship **(c)** so the user can keep extending without re-exposing the next-meeting handoff.
+**Recommendation:** Ship **(c)** so the user can keep extending while preserving a clear next-meeting handoff whenever one is still scheduled.
 
 **Blocks:** Phase 3.
 
