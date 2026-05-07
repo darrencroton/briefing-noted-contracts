@@ -354,11 +354,11 @@ location_type: home
 
 The manifest is the single handoff object describing one meeting instance. `briefing` is the normal author (for calendar-driven sessions); `noted` is the author only for ad hoc sessions (§20.1). The reader is always `noted`. Once written, a manifest must not be modified — runtime state lives in separate files (§10, §11).
 
-### 8.2 Canonical Schema (v1.0)
+### 8.2 Canonical Schema (v2.0)
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "session_id": "2026-04-18-jayde-1600",
   "created_at": "2026-04-18T15:54:12+10:00",
   "meeting": {
@@ -372,8 +372,7 @@ The manifest is the single handoff object describing one meeting instance. `brie
     "location_type": "office"
   },
   "mode": {
-    "type": "in_person",
-    "audio_strategy": "room_mic"
+    "type": "in_person"
   },
   "participants": {
     "host_name": "Darren",
@@ -433,7 +432,6 @@ The manifest is the single handoff object describing one meeting instance. `brie
 - `meeting.series_id` (absent for ad hoc sessions)
 - `meeting.location`
 - `meeting.location_type`
-- `mode.audio_strategy` (if absent, `noted` derives it from `mode.type` per §14.1)
 - `participants.attendees_expected`, `participants.participant_names`
 - `next_meeting.event_id`, `next_meeting.title`, `next_meeting.start_time`, `next_meeting.manifest_path`
 - `transcription.speaker_count_hint` (derived from `attendees` if not set — see §7.3 and §8.5), `transcription.language` (BCP-47, e.g. `en-AU`; `briefing` writes its configured default for calendar sessions, and `noted` falls back to its own setting only if absent)
@@ -631,7 +629,7 @@ This is optional in v1; file-watching `completion.json` is the normal path.
 **Stdout:**
 
 ```json
-{"ok": true, "schema_version": "1.0"}
+{"ok": true, "schema_version": "2.0"}
 ```
 
 ### 9.7 `extend` and `switch-next` (popup-driven actions)
@@ -736,9 +734,9 @@ sessions/
       status.json
       ui_state.json
     audio/
-      raw_room.wav        (audio_strategy = room_mic)
-      raw_mic.wav         (audio_strategy = mic_plus_system)
-      raw_system.wav      (audio_strategy = mic_plus_system)
+      raw_room.wav        (mode.type = in_person)
+      raw_mic.wav         (mode.type = online or hybrid)
+      raw_system.wav      (mode.type = online or hybrid)
     transcript/
       transcript.json
       transcript.txt
@@ -769,7 +767,7 @@ sessions/
 {
   "schema_version": "1.0",
   "session_id": "2026-04-18-jayde-1600",
-  "manifest_schema_version": "1.0",
+  "manifest_schema_version": "2.0",
   "terminal_status": "completed_with_warnings",
   "stop_reason": "scheduled_stop",
   "audio_capture_ok": true,
@@ -891,15 +889,15 @@ If `noted switch-next` attempts to launch a manifest that has been archived away
 
 ### 14.1 Supported Modes
 
-|Mode       |`audio_strategy`    |Capture behaviour                                                                                                                   |
-|-----------|--------------------|------------------------------------------------------------------------------------------------------------------------------------|
-|`in_person`|`room_mic`          |Single high-quality audio input (typically an external USB mic or AirPods pretending to be the room mic). Offline ASR + diarization.|
-|`online`   |`mic_plus_system`   |Capture microphone *and* system audio. Useful for video calls. Offline ASR.                                                         |
-|`hybrid`   |`room_mic` (default)|Treated as `in_person` unless explicitly overridden.                                                                                |
+|Mode       |Capture behaviour                                                                                                                   |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------|
+|`in_person`|Single high-quality audio input (typically an external USB mic or AirPods pretending to be the room mic). Offline ASR + diarization.|
+|`online`   |Capture microphone *and* system audio. Useful for video calls. Offline ASR.                                                         |
+|`hybrid`   |Same capture layout as `online`: local microphone plus system audio.                                                                |
 
 ### 14.2 Rationale
 
-In-person is the primary case and hardest problem. Online is supported because it’s a low-cost addition — the ASR and summarisation pipeline is shared. Hybrid exists as a category label; it does not get its own capture strategy in v1.
+In-person is the primary case and hardest problem. Online is supported because it’s a low-cost addition — the ASR and summarisation pipeline is shared. Hybrid exists as a category label for calendar/user intent, but it uses the same capture layout as online so that room and remote speakers remain separated for downstream processing.
 
 ### 14.3 System Audio on macOS
 
@@ -1060,7 +1058,7 @@ This plan *extends* `briefing`; it does not duplicate it. Dev team familiarity w
   - `briefing session-plan --event-id <id>` — generate a manifest for a single detected event, with `next_meeting` lookahead. Used by `briefing watch` during planning and during invalidation sweeps.
   - `briefing session-ingest --session-dir <path>` — consume a completed `noted` session (reads `completion.json` + transcript) and write the summary into the Obsidian note. Invoked by `noted` when post-processing finishes, per §27.6.
   - `briefing session-reprocess --session-dir <path>` — rerun summarisation on an existing transcript. Essential for the retain-raw-audio recovery story.
-- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `location_type`, `mode`, `audio_strategy`, `host_name`, `attendees_expected`, `participant_names`, `speaker_count_hint`, `note_dir`, `note_slug`, `language`, `asr_backend`, `diarization_enabled`, and the `recording_policy` block. These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
+- Extensions to the series YAML to supply the full default metadata set for series-matched events. Fields include: `record: true | false`, `location_type`, `mode`, `host_name`, `attendees_expected`, `participant_names`, `speaker_count_hint`, `note_dir`, `note_slug`, `language`, `asr_backend`, `diarization_enabled`, and the `recording_policy` block. These series-level values are the **primary source** of metadata for series-matched events; calendar-note values override them on a per-instance basis per §7.3. A user who intends the series to be recorded sets `record: true` in the series YAML once, and does not need to touch calendar notes thereafter.
 - Multi-Mac recording-location routing in `briefing`: a global default target `location_type`, an optional local `location_type`, and an optional host-name mapping based on macOS `HostName`, `LocalHostName`, and `ComputerName`. Routing affects eligibility before manifest writing or launch; `noted` does not participate in this decision.
 - A trigger mechanism — how `briefing` is invoked near the start of a meeting rather than on a fixed launchd schedule. See §27.1. Whichever trigger model is chosen, `briefing` at pre-roll time invokes `noted start --manifest <path>` directly; there is no `briefing session-start` wrapper.
 - A manifest-invalidation sweep in `briefing watch` (§13.3) so pre-prepared next-meeting manifests reflect current calendar state.
@@ -1132,7 +1130,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "session_id": "adhoc-2026-04-18-154500",
   "created_at": "2026-04-18T15:45:00+10:00",
   "meeting": {
@@ -1142,7 +1140,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
     "scheduled_end_time": null,
     "timezone": "Australia/Melbourne"
   },
-  "mode": {"type": "in_person", "audio_strategy": "room_mic"},
+  "mode": {"type": "in_person"},
   "participants": {"host_name": "Darren", "names_are_hints_only": true},
   "recording_policy": {
     "auto_start": true,

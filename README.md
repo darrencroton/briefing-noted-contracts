@@ -16,6 +16,7 @@ Completed as of 2026-04-29:
 - Polish tickets N-21 through N-24 and B-22 through B-25: automatic ingest handoff, ad hoc canonical Start, cross-boundary diagnostics, dry-runs, formal smoke script, and user docs.
 - Phase 5A pre-soak hardening: `noted wait`, Meeting Intelligence `validate` preflight, one-week soak runbook, and the summary eval set.
 - Current UX polish: centered `noted` end-of-meeting popup, menubar settings for model cache status / input microphone / auto-ingest, noted-owned model cache under Application Support, visible `## Meeting Summary` sections without hidden Markdown comments, and multi-Mac `location_type` routing in `briefing watch`.
+- Contracts v2.0.0: `mode.audio_strategy` has been removed; `mode.type` directly controls capture layout (`in_person` = room mic only, `online`/`hybrid` = mic plus system audio).
 
 Next work:
 
@@ -36,7 +37,7 @@ Earlier planning documents (`Initial Action Plan`, `ASR Stack Recommendation`) a
 `contracts/` contains the neutral contract surface consumed by `briefing` and
 `noted`:
 
-- `schemas/manifest.v1.json`
+- `schemas/manifest.v2.json`
 - `schemas/completion.v1.json`
 - `schemas/runtime-status.v1.json`
 - `cli-contract.md` — `noted`'s CLI surface
@@ -45,7 +46,7 @@ Earlier planning documents (`Initial Action Plan`, `ASR Stack Recommendation`) a
 - `fixtures/` — valid/invalid manifests, completion examples, smoke-test WAV
 - `CHANGELOG.md`
 
-## Decisions already locked (apply when authoring `manifest.v1.json`)
+## Decisions already locked (apply when authoring `manifest.v2.json`)
 
 - `transcription.asr_backend` is an enum: **`"fluidaudio-parakeet"`** (default), `"whisperkit"`, `"sfspeech"`. Do **not** use `"faster-whisper"` or `"whisperx"` — the Swift stack was chosen on 2026-04-23. See Master Plan §15.2, §15.4, §27.9.
 

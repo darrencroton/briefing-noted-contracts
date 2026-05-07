@@ -1,4 +1,4 @@
-# `noted` CLI Contract (v1.0)
+# `noted` CLI Contract (v2.0)
 
 **Authoritative source:** Master Plan §9. This document is the stable interface between `briefing` and `noted`; schema-level changes bump the contract version per `versioning-policy.md`.
 
@@ -12,7 +12,7 @@
 
 ## Commands
 
-### Required (v1)
+### Required
 
 ```
 noted start             --manifest <path>
@@ -188,7 +188,7 @@ Validates schema, required fields, and value ranges without starting a session.
 **stdout (valid):**
 
 ```json
-{"ok": true, "schema_version": "1.0"}
+{"ok": true, "schema_version": "2.0"}
 ```
 
 **stdout (invalid):** `{"ok": false, "schema_version": "<value-if-readable>", "errors": ["..."]}` (shape is advisory for v1; exit code is the contract).
@@ -208,7 +208,7 @@ Validates schema, required fields, and value ranges without starting a session.
 **stdout:**
 
 ```json
-{"ok": true, "version": "<semver>", "manifest_schema_version": "1.0", "completion_schema_version": "1.0"}
+{"ok": true, "version": "<semver>", "manifest_schema_version": "2.0", "completion_schema_version": "1.0"}
 ```
 
 ---
