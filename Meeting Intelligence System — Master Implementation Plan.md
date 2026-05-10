@@ -139,7 +139,7 @@ Keeping these separate avoids duplicating calendar logic, prevents the runtime a
 
 ### 5.1 Components
 
-**`briefing`** — the orchestration brain. An existing Python 3.13+ CLI app, `uv`-managed, running under `launchd` on macOS. Already handles: EventKit calendar ingestion, series configuration, source adapters (`previous_note`, `slack`, `notion`, `file`), LLM CLI invocation (Claude, Codex, Copilot, Gemini), and Obsidian note writing with a managed `## Briefing` block.
+**`briefing`** — the orchestration brain. An existing Python 3.13+ CLI app, `uv`-managed, running under `launchd` on macOS. Already handles: EventKit calendar ingestion, series configuration, source adapters (`previous_note`, `slack`, `notion`, `file`), LLM provider invocation (Claude, Codex, Copilot, Gemini, or an OpenAI-compatible API server), and Obsidian note writing with a managed `## Briefing` block.
 
 **`noted`** — the menubar capture agent. A fork of HushScribe, reduced in scope: removes summarisation, meeting detection, and transcript viewer; retains audio capture, ASR, diarization, and file output; adds a CLI, manifest loader, session directory writer, menubar UI, and end-of-meeting prompt logic.
 
@@ -1043,7 +1043,7 @@ This plan *extends* `briefing`; it does not duplicate it. Dev team familiarity w
 - `user_config/series/*.yaml` series definitions.
 - `[paths]`, `[calendar]`, `[llm]`, `[logging]` configuration schema.
 - Source adapters: `previous_note`, `slack`, `notion`, `file`.
-- LLM CLI providers (`claude`, `codex`, `copilot`, `gemini`) with `effort`, `timeout_seconds`, `retry_attempts`.
+- LLM providers: CLI providers (`claude`, `codex`, `copilot`, `gemini`) plus `openai-compatible` API servers, with `effort`, `timeout_seconds`, `retry_attempts`, and provider-specific API settings.
 - `pre_meeting_summary.md` prompt template.
 - `meeting_note.md` note template.
 - Managed `## Briefing` block with preservation of user content.
@@ -1219,7 +1219,7 @@ Must log (in addition to its existing logging): event detection, metadata parse 
 
 ### 22.2 LLM Calls
 
-`briefing` sends transcript text to the configured LLM CLI. Whether that provider is local or remote is a per-user policy decision, owned by `briefing`’s existing `[llm]` configuration. No change to that model is introduced here.
+`briefing` sends transcript text to the configured LLM provider. Whether that provider is local or remote is a per-user policy decision, owned by `briefing`’s existing `[llm]` configuration. For local OpenAI-compatible servers, the configured context and output budgets must fit the transcript, prompt, note context, and any model thinking tokens.
 
 ### 22.3 Recording Notification
 
