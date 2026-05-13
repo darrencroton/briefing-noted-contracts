@@ -1120,7 +1120,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
 - `meeting.scheduled_end_time` is `null` — the session has no scheduled end. This relaxes the “required field” rule of §8.3 for ad hoc sessions only: `noted`’s manifest writer sets it to `null` and the end-of-meeting popup logic (§12) is suppressed.
 - `participants.host_name` is taken from settings (§20.4).
 - `participants.names_are_hints_only` is `true`.
-- `mode.type` defaults to `in_person`.
+- `mode.type` defaults to `hybrid`.
 - `recording_policy` is populated from defaults. With no `scheduled_end_time`, only manual stop ends the session.
 - `next_meeting.exists` is `false`.
 - `paths.session_dir`, `paths.output_dir`, `paths.note_path` are resolved against settings. `note_path` points to the default ad hoc notes directory.
@@ -1140,7 +1140,7 @@ For ad hoc sessions, `noted` constructs a **full, canonical manifest** (the same
     "scheduled_end_time": null,
     "timezone": "Australia/Melbourne"
   },
-  "mode": {"type": "in_person"},
+  "mode": {"type": "hybrid"},
   "participants": {"host_name": "Darren", "names_are_hints_only": true},
   "recording_policy": {
     "auto_start": true,
